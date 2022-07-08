@@ -58,11 +58,6 @@
             </dependency>
             <dependency>
                 <groupId>io.carml</groupId>
-                <artifactId>carml-model</artifactId>
-                <version>${carml.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.carml</groupId>
                 <artifactId>carml-logical-source-resolver-xpath</artifactId>
                 <version>${carml.version}</version>
             </dependency>
@@ -78,38 +73,10 @@
             </dependency>
             <dependency>
                 <groupId>org.eclipse.rdf4j</groupId>
-                <artifactId>rdf4j-rio-turtle</artifactId>
+                <artifactId>rdf4j-bom</artifactId>
                 <version>${rdf4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.rdf4j</groupId>
-                <artifactId>rdf4j-rio-trig</artifactId>
-                <version>${rdf4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.rdf4j</groupId>
-                <artifactId>rdf4j-rio-rdfxml</artifactId>
-                <version>${rdf4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.rdf4j</groupId>
-                <artifactId>rdf4j-rio-ntriples</artifactId>
-                <version>${rdf4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.rdf4j</groupId>
-                <artifactId>rdf4j-rio-n3</artifactId>
-                <version>${rdf4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.rdf4j</groupId>
-                <artifactId>rdf4j-rio-nquads</artifactId>
-                <version>${rdf4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.rdf4j</groupId>
-                <artifactId>rdf4j-rio-jsonld</artifactId>
-                <version>${rdf4j.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>org.slf4j</groupId>
@@ -120,21 +87,6 @@
                         <artifactId>log4j</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.rdf4j</groupId>
-                <artifactId>rdf4j-rio-rdfjson</artifactId>
-                <version>${rdf4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.rdf4j</groupId>
-                <artifactId>rdf4j-rio-trix</artifactId>
-                <version>${rdf4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.rdf4j</groupId>
-                <artifactId>rdf4j-rio-binary</artifactId>
-                <version>${rdf4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.projectlombok</groupId>
