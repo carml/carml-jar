@@ -10,15 +10,19 @@ public class CarmlRunner implements CommandLineRunner, ExitCodeGenerator {
 
   private final CarmlCommand carmlCommand;
 
+  private final CarmlMapCommand carmlMapCommand;
+
   private int exitCode;
 
-  public CarmlRunner(CarmlCommand carmlCommand) {
+  public CarmlRunner(CarmlCommand carmlCommand, CarmlMapCommand carmlMapCommand) {
     this.carmlCommand = carmlCommand;
+    this.carmlMapCommand = carmlMapCommand;
   }
 
   @Override
   public void run(String... args) {
-    var commandLine = new CommandLine(carmlCommand);
+    var commandLine = new CommandLine(carmlCommand).addSubcommand("map", carmlMapCommand);
+
     // commandLine.usage(System.out, CommandLine.Help.Ansi.ON);
     exitCode = commandLine.execute(args);
   }

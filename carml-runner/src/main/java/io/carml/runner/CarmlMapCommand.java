@@ -1,41 +1,60 @@
 package io.carml.runner;
 
+import static io.carml.runner.model.RdfFormat.n3;
+import static io.carml.runner.model.RdfFormat.nq;
+import static io.carml.runner.model.RdfFormat.nt;
+import static io.carml.runner.model.RdfFormat.trig;
+import static io.carml.runner.model.RdfFormat.trix;
+import static io.carml.runner.model.RdfFormat.ttl;
+
 import io.carml.engine.rdf.RdfRmlMapper;
 import io.carml.logicalsourceresolver.CsvResolver;
 import io.carml.logicalsourceresolver.JsonPathResolver;
 import io.carml.logicalsourceresolver.XPathResolver;
 import io.carml.model.Resource;
 import io.carml.model.TriplesMap;
+import io.carml.runner.input.ModelLoader;
+import io.carml.runner.model.RdfFormat;
 import io.carml.runner.option.MappingFileOptions;
 import io.carml.runner.option.OutputOptions;
+import io.carml.runner.output.OutputHandler;
 import io.carml.util.ModelSerializer;
-import io.carml.util.Models;
 import io.carml.util.RmlMappingLoader;
 import io.carml.util.RmlNamespaces;
 import io.carml.vocab.Rdf;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.util.ModelCollector;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.RDFWriterRegistry;
-import org.eclipse.rdf4j.rio.Rio;
+import org.springframework.stereotype.Component;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import reactor.core.publisher.Flux;
 
 @Slf4j
+@Component
 @Command(name = "map", sortOptions = false, mixinStandardHelpOptions = true)
 public class CarmlMapCommand implements Callable<Integer> {
+  private static final Set<RdfFormat> STREAMING_FORMAT = Set.of(nt, nq);
+
+  private static final Set<RdfFormat> POTENTIALLY_STREAMING_FORMAT = Set.of(ttl, trig, n3, trix);
+
+  private final ModelLoader modelLoader;
+
+  private final OutputHandler outputHandler;
 
   @Mixin
   private MappingFileOptions mappingFileOptions;
@@ -43,17 +62,20 @@ public class CarmlMapCommand implements Callable<Integer> {
   @Mixin
   private OutputOptions outputOptions;
 
+  public CarmlMapCommand(ModelLoader modelLoader, OutputHandler outputHandler) {
+    this.modelLoader = modelLoader;
+    this.outputHandler = outputHandler;
+  }
+
   @Override
   public Integer call() {
-    System.out.println("bla");
-
     var rmlMapper = prepareMapper();
     var statements = map(rmlMapper);
     var nrOfStatements = handleOutput(statements);
 
-
     LOG.info("Finished processing.");
     LOG.info("Generated {} statements.", nrOfStatements);
+
     return 0;
   }
 
@@ -98,63 +120,20 @@ public class CarmlMapCommand implements Callable<Integer> {
     var mappingFormat = mappingFileOptions.getGroup()
         .getMappingFileRdfFormat();
 
-    var specifiedRdfFormat = mappingFormat != null ? determineRdfFormat(mappingFormat.name()) : null;
-
-    var mappingModel = paths.stream()
-        .flatMap(path -> resolvePaths(List.of(path)).stream())
-        .flatMap(path -> parsePathToStatements(path, specifiedRdfFormat))
-        .collect(new ModelCollector());
+    var mappingModel = modelLoader.loadModel(paths, mappingFormat);
 
     return RmlMappingLoader.build()
         .load(mappingModel);
   }
 
-  private Stream<Statement> parsePathToStatements(Path path, RDFFormat specifiedRdfFormat) {
-    try (var is = Files.newInputStream(path)) {
-      var fileName = path.getFileName()
-          .toString();
-
-      RDFFormat rdfFormat;
-      if (specifiedRdfFormat != null) {
-        rdfFormat = specifiedRdfFormat;
-      } else {
-        rdfFormat = Rio.getParserFormatForFileName(path.getFileName()
-            .toString())
-            .orElseThrow(() -> new CarmlJarException(
-                String.format("Could not determine mapping format for filename '%s'", fileName)));
-      }
-
-      return Models.parse(is, rdfFormat)
-          .stream();
-    } catch (IOException exception) {
-      throw new CarmlJarException(String.format("Could not read file %s", path), exception);
-    }
-  }
-
-  private List<Path> resolvePaths(List<Path> paths) {
-    return paths.stream()
-        .flatMap(path -> {
-          try (Stream<Path> walk = Files.walk(path)) {
-            return walk.filter(Files::isRegularFile)
-                .collect(Collectors.toList())
-                .stream();
-          } catch (IOException exception) {
-            throw new CarmlJarException(String.format("Exception occurred while reading file %s", path), exception);
-          }
-        })
-        .collect(Collectors.toList());
-  }
-
-  private RDFFormat determineRdfFormat(String format) {
-    Objects.requireNonNull(format);
-
+  public static RDFFormat determineRdfFormat(@NonNull String rdfFormat) {
     return RDFWriterRegistry.getInstance()
         .getKeys()
         .stream()
-        .filter(f -> f.getDefaultFileExtension()
-            .equals(format))
+        .filter(format -> format.getDefaultFileExtension()
+            .equals(rdfFormat))
         .findFirst()
-        .orElseThrow(() -> new CarmlJarException(String.format("Could not determine RDFFormat for `%s`", format)));
+        .orElseThrow(() -> new CarmlJarException(String.format("Could not determine RDFFormat for `%s`", rdfFormat)));
   }
 
   private Flux<Statement> map(RdfRmlMapper rmlMapper) {
@@ -162,10 +141,36 @@ public class CarmlMapCommand implements Callable<Integer> {
   }
 
   private long handleOutput(Flux<Statement> statements) {
-    statements.collect(Collectors.toList())
-        .block()
-        .forEach(System.out::println);
+    var outputPath = outputOptions.getGroup()
+        .getOutputPath();
 
-    return -1;
+    var rdfFormat = outputOptions.getGroup()
+        .getOutputRdfFormat();
+
+    if (outputPath == null) {
+      LOG.info("No output file specified. Outputting to console...{}", System.lineSeparator());
+      return outputRdf(statements, rdfFormat, Map.of(), System.out);
+    } else {
+      LOG.info("Writing output to {} ...", outputPath);
+      try (var outputStream = new BufferedOutputStream(Files.newOutputStream(outputPath, StandardOpenOption.CREATE))) {
+        return outputRdf(statements, rdfFormat, Map.of(), outputStream);
+      } catch (IOException ioException) {
+        throw new CarmlJarException(String.format("Error writing to output path %s", outputPath), ioException);
+      }
+    }
+  }
+
+  private long outputRdf(Flux<Statement> statements, RdfFormat format, Map<String, String> namespaces,
+      OutputStream outputStream) {
+    if (isOutputStreamable(format, outputOptions.getGroup()
+        .isPretty())) {
+      return outputHandler.outputStreaming(statements, format, namespaces, outputStream);
+    } else {
+      return outputHandler.outputPretty(statements, format, namespaces, outputStream);
+    }
+  }
+
+  private boolean isOutputStreamable(RdfFormat format, boolean pretty) {
+    return STREAMING_FORMAT.contains(format) || (!pretty && POTENTIALLY_STREAMING_FORMAT.contains(format));
   }
 }

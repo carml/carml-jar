@@ -13,4 +13,6 @@ final class OptionOrder {
   static final int OUTPUT_ORDER = 40;
 
   static final int OUTFORMAT_ORDER = 50;
+
+  static final int PRETTY_ORDER = 60;
 }

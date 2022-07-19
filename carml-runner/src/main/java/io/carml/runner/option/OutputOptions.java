@@ -2,8 +2,9 @@ package io.carml.runner.option;
 
 import static io.carml.runner.option.OptionOrder.OUTFORMAT_ORDER;
 import static io.carml.runner.option.OptionOrder.OUTPUT_ORDER;
+import static io.carml.runner.option.OptionOrder.PRETTY_ORDER;
 
-import io.carml.runner.RdfFormat;
+import io.carml.runner.model.RdfFormat;
 import java.nio.file.Path;
 import lombok.Getter;
 import picocli.CommandLine.ArgGroup;
@@ -18,14 +19,18 @@ public class OutputOptions {
   private Group group;
 
   @Getter
-  static class Group {
+  public static class Group {
     @Option(names = {"-o", "--output"}, order = OUTPUT_ORDER, description = { //
         "Output file path.", //
         "If path is directory, will default to fileName `output`.", //
         "If left empty will output to console."})
     private Path outputPath;
 
-    @Option(names = {"-t", "-of", "--outformat"}, order = OUTFORMAT_ORDER, description = "Output RDF format (see -f).")
+    @Option(names = {"-F", "-of", "--outformat"}, order = OUTFORMAT_ORDER, description = "Output RDF format (see -f).")
     private RdfFormat outputRdfFormat;
+
+    @Option(names = {"-P", "--pretty"}, order = PRETTY_ORDER,
+        description = "Serialize output in pretty fashion. (Caution: will cause in-memory processing)")
+    private boolean pretty;
   }
 }

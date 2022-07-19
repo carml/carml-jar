@@ -4,7 +4,7 @@ import static io.carml.runner.option.OptionOrder.FORMAT_ORDER;
 import static io.carml.runner.option.OptionOrder.MAPPING_ORDER;
 import static io.carml.runner.option.OptionOrder.REL_SRC_LOC_ORDER;
 
-import io.carml.runner.RdfFormat;
+import io.carml.runner.model.RdfFormat;
 import java.nio.file.Path;
 import java.util.List;
 import lombok.Getter;

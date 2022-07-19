@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component;
 import picocli.CommandLine.Command;
 
 @Component
-@Command(name = "carml", mixinStandardHelpOptions = true, sortOptions = false, subcommands = {CarmlMapCommand.class})
+@Command(name = "carml", mixinStandardHelpOptions = true, sortOptions = false)
 public class CarmlCommand {
 
 }

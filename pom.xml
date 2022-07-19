@@ -34,6 +34,7 @@
 
     <modules>
         <module>carml-app</module>
+        <module>carml-output</module>
         <module>carml-runner</module>
     </modules>
 
