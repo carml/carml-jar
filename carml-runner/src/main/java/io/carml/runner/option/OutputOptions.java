@@ -30,7 +30,7 @@ public class OutputOptions {
     private RdfFormat outputRdfFormat;
 
     @Option(names = {"-P", "--pretty"}, order = PRETTY_ORDER,
-        description = "Serialize output in pretty fashion. (Caution: will cause in-memory processing)")
+        description = "Serialize output in pretty fashion. (Caution: will cause in-memory output collection)")
     private boolean pretty;
   }
 }
