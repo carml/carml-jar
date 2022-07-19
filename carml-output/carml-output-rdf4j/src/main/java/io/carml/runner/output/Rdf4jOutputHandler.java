@@ -45,16 +45,20 @@ public class Rdf4jOutputHandler implements OutputHandler {
     try {
       rdfWriter.startRDF();
       namespaces.forEach(rdfWriter::handleNamespace);
-      statementFlux.doOnNext(statement -> {
-        rdfWriter.handleStatement(statement);
-        counter.getAndIncrement();
-      })
+
+      statementFlux.doOnNext(statement -> handleStatementWrite(statement, rdfWriter, counter))
           .blockLast();
+
       rdfWriter.endRDF();
     } catch (RDFHandlerException rdfHandlerException) {
       throw new CarmlJarException("Exception occurred while writing output.", rdfHandlerException);
     }
 
     return counter.get();
+  }
+
+  private void handleStatementWrite(Statement statement, RDFWriter rdfWriter, AtomicLong counter) {
+    rdfWriter.handleStatement(statement);
+    counter.getAndIncrement();
   }
 }
