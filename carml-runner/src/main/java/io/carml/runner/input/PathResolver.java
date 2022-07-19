@@ -18,7 +18,7 @@ public final class PathResolver {
                 .collect(Collectors.toList())
                 .stream();
           } catch (IOException exception) {
-            throw new CarmlJarException(String.format("Exception occurred while reading file %s", path), exception);
+            throw new CarmlJarException(String.format("Exception occurred while reading path %s", path), exception);
           }
         })
         .collect(Collectors.toList());

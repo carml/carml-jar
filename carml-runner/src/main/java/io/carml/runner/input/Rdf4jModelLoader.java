@@ -14,6 +14,7 @@ import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.util.ModelCollector;
 import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFParseException;
 import org.eclipse.rdf4j.rio.Rio;
 import org.springframework.stereotype.Component;
 
@@ -42,13 +43,12 @@ public class Rdf4jModelLoader implements ModelLoader {
         rdfFormat = Rio.getParserFormatForFileName(path.getFileName()
             .toString())
             .orElseThrow(() -> new CarmlJarException(
-                String.format("Could not determine mapping format for filename '%s'", fileName)));
+                String.format("Could not determine mapping format by file extension for path '%s'", path)));
       }
-
       return Models.parse(is, rdfFormat)
           .stream();
-    } catch (IOException exception) {
-      throw new CarmlJarException(String.format("Could not read file %s", path), exception);
+    } catch (IOException | RDFParseException exception) {
+      throw new CarmlJarException(String.format("Exception occurred while parsing %s", path), exception);
     }
   }
 
