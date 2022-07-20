@@ -7,7 +7,7 @@ A CLI for CARML
 
 ### Map RDF file to output
 
-```shell
+```console
 Usage: carml map [-hV] (-m=<mappingFiles> [-m=<mappingFiles>]...
                  [-f=<mappingFileRdfFormat>] [-r=<relativeSourceLocation>])
                  [[-o=<outputPath>] [-t=<outputRdfFormat>] [-P]]
