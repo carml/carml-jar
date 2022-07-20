@@ -1,6 +1,11 @@
 package io.carml.runner;
 
-import static io.carml.runner.format.RdfFormat.*;
+import static io.carml.runner.format.RdfFormat.n3;
+import static io.carml.runner.format.RdfFormat.nq;
+import static io.carml.runner.format.RdfFormat.nt;
+import static io.carml.runner.format.RdfFormat.trig;
+import static io.carml.runner.format.RdfFormat.trix;
+import static io.carml.runner.format.RdfFormat.ttl;
 
 import io.carml.engine.rdf.RdfRmlMapper;
 import io.carml.logicalsourceresolver.CsvResolver;
