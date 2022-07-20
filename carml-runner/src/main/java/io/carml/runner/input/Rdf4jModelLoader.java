@@ -1,9 +1,9 @@
 package io.carml.runner.input;
 
-import static io.carml.runner.CarmlMapCommand.determineRdfFormat;
+import static io.carml.runner.format.Rdf4JFormats.determineRdfFormat;
 
 import io.carml.runner.CarmlJarException;
-import io.carml.runner.model.RdfFormat;
+import io.carml.runner.format.RdfFormat;
 import io.carml.util.Models;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -40,8 +40,7 @@ public class Rdf4jModelLoader implements ModelLoader {
       if (specifiedRdfFormat != null) {
         rdfFormat = specifiedRdfFormat;
       } else {
-        rdfFormat = Rio.getParserFormatForFileName(path.getFileName()
-            .toString())
+        rdfFormat = Rio.getParserFormatForFileName(fileName)
             .orElseThrow(() -> new CarmlJarException(
                 String.format("Could not determine mapping format by file extension for path '%s'", path)));
       }

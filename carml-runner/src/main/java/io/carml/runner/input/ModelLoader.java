@@ -1,6 +1,6 @@
 package io.carml.runner.input;
 
-import io.carml.runner.model.RdfFormat;
+import io.carml.runner.format.RdfFormat;
 import java.nio.file.Path;
 import java.util.List;
 import org.eclipse.rdf4j.model.Model;

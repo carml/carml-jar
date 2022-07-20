@@ -1,7 +1,8 @@
 package io.carml.runner.input;
 
-import static io.carml.runner.model.RdfFormat.nq;
-import static io.carml.runner.model.RdfFormat.ttl;
+import static io.carml.runner.TestApplication.getTestSourcePath;
+import static io.carml.runner.format.RdfFormat.nq;
+import static io.carml.runner.format.RdfFormat.ttl;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
@@ -17,8 +18,7 @@ import org.junit.jupiter.api.Test;
 
 class Rdf4jModelResolverTest {
 
-  private static final Path TEST_PATH =
-      Paths.get("src", "test", "resources", "io", "carml", "runner", "input", "rdf4j-model-resolver");
+  private static final Path TEST_PATH = getTestSourcePath(Paths.get("input", "rdf4j-model-resolver"));
 
   private static final ValueFactory VALUE_FACTORY = SimpleValueFactory.getInstance();
 

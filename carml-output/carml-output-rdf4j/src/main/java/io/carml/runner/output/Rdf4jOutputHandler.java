@@ -1,8 +1,9 @@
 package io.carml.runner.output;
 
+import static io.carml.runner.format.Rdf4JFormats.determineRdfFormat;
+
 import io.carml.runner.CarmlJarException;
-import io.carml.runner.CarmlMapCommand;
-import io.carml.runner.model.RdfFormat;
+import io.carml.runner.format.RdfFormat;
 import java.io.OutputStream;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -31,7 +32,7 @@ public class Rdf4jOutputHandler implements OutputHandler {
 
     assert model != null;
     namespaces.forEach(model::setNamespace);
-    Rio.write(model, outputStream, CarmlMapCommand.determineRdfFormat(format.name()), config);
+    Rio.write(model, outputStream, determineRdfFormat(format.name()), config);
 
     return model.size();
   }
@@ -39,7 +40,7 @@ public class Rdf4jOutputHandler implements OutputHandler {
   @Override
   public long outputStreaming(Flux<Statement> statementFlux, RdfFormat format, Map<String, String> namespaces,
       OutputStream outputStream) {
-    RDFWriter rdfWriter = Rio.createWriter(CarmlMapCommand.determineRdfFormat(format.name()), outputStream);
+    RDFWriter rdfWriter = Rio.createWriter(determineRdfFormat(format.name()), outputStream);
     AtomicLong counter = new AtomicLong();
 
     try {

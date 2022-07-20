@@ -10,6 +10,8 @@ import java.util.stream.Stream;
 
 public final class PathResolver {
 
+  private PathResolver() {}
+
   public static List<Path> resolvePaths(List<Path> paths) {
     return paths.stream()
         .flatMap(path -> {

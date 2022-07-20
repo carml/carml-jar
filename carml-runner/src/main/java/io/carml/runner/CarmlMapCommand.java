@@ -1,11 +1,6 @@
 package io.carml.runner;
 
-import static io.carml.runner.model.RdfFormat.n3;
-import static io.carml.runner.model.RdfFormat.nq;
-import static io.carml.runner.model.RdfFormat.nt;
-import static io.carml.runner.model.RdfFormat.trig;
-import static io.carml.runner.model.RdfFormat.trix;
-import static io.carml.runner.model.RdfFormat.ttl;
+import static io.carml.runner.format.RdfFormat.*;
 
 import io.carml.engine.rdf.RdfRmlMapper;
 import io.carml.logicalsourceresolver.CsvResolver;
@@ -13,8 +8,8 @@ import io.carml.logicalsourceresolver.JsonPathResolver;
 import io.carml.logicalsourceresolver.XPathResolver;
 import io.carml.model.Resource;
 import io.carml.model.TriplesMap;
+import io.carml.runner.format.RdfFormat;
 import io.carml.runner.input.ModelLoader;
-import io.carml.runner.model.RdfFormat;
 import io.carml.runner.option.MappingFileOptions;
 import io.carml.runner.option.OutputOptions;
 import io.carml.runner.output.OutputHandler;
@@ -32,13 +27,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.util.ModelCollector;
 import org.eclipse.rdf4j.rio.RDFFormat;
-import org.eclipse.rdf4j.rio.RDFWriterRegistry;
 import org.springframework.stereotype.Component;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -48,6 +41,7 @@ import reactor.core.publisher.Flux;
 @Component
 @Command(name = "map", sortOptions = false, mixinStandardHelpOptions = true)
 public class CarmlMapCommand implements Callable<Integer> {
+
   private static final Set<RdfFormat> STREAMING_FORMAT = Set.of(nt, nq);
 
   private static final Set<RdfFormat> POTENTIALLY_STREAMING_FORMAT = Set.of(ttl, trig, n3, trix);
@@ -126,34 +120,28 @@ public class CarmlMapCommand implements Callable<Integer> {
         .load(mappingModel);
   }
 
-  public static RDFFormat determineRdfFormat(@NonNull String rdfFormat) {
-    return RDFWriterRegistry.getInstance()
-        .getKeys()
-        .stream()
-        .filter(format -> format.getDefaultFileExtension()
-            .equals(rdfFormat))
-        .findFirst()
-        .orElseThrow(() -> new CarmlJarException(String.format("Could not determine RDFFormat for `%s`", rdfFormat)));
-  }
-
   private Flux<Statement> map(RdfRmlMapper rmlMapper) {
     return rmlMapper.map();
   }
 
   private long handleOutput(Flux<Statement> statements) {
-    var outputPath = outputOptions.getGroup()
-        .getOutputPath();
-
-    var rdfFormat = outputOptions.getGroup()
-        .getOutputRdfFormat();
+    var outputOptionsGroup = outputOptions.getGroup();
+    Path outputPath = null;
+    RdfFormat rdfFormat = nq;
+    var pretty = false;
+    if (outputOptionsGroup != null) {
+      outputPath = outputOptionsGroup.getOutputPath();
+      rdfFormat = outputOptionsGroup.getOutputRdfFormat();
+      pretty = outputOptionsGroup.isPretty();
+    }
 
     if (outputPath == null) {
       LOG.info("No output file specified. Outputting to console...{}", System.lineSeparator());
-      return outputRdf(statements, rdfFormat, Map.of(), System.out);
+      return outputRdf(statements, rdfFormat, Map.of(), System.out, pretty);
     } else {
       LOG.info("Writing output to {} ...", outputPath);
       try (var outputStream = new BufferedOutputStream(Files.newOutputStream(outputPath, StandardOpenOption.CREATE))) {
-        return outputRdf(statements, rdfFormat, Map.of(), outputStream);
+        return outputRdf(statements, rdfFormat, Map.of(), outputStream, pretty);
       } catch (IOException ioException) {
         throw new CarmlJarException(String.format("Error writing to output path %s", outputPath), ioException);
       }
@@ -161,9 +149,8 @@ public class CarmlMapCommand implements Callable<Integer> {
   }
 
   private long outputRdf(Flux<Statement> statements, RdfFormat format, Map<String, String> namespaces,
-      OutputStream outputStream) {
-    if (isOutputStreamable(format, outputOptions.getGroup()
-        .isPretty())) {
+      OutputStream outputStream, boolean pretty) {
+    if (isOutputStreamable(format, pretty)) {
       return outputHandler.outputStreaming(statements, format, namespaces, outputStream);
     } else {
       return outputHandler.outputPretty(statements, format, namespaces, outputStream);

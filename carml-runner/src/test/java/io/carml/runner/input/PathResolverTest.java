@@ -1,5 +1,6 @@
 package io.carml.runner.input;
 
+import static io.carml.runner.TestApplication.getTestSourcePath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
@@ -13,8 +14,7 @@ import org.junit.jupiter.api.Test;
 
 class PathResolverTest {
 
-  private static final Path TEST_PATH =
-      Paths.get("src", "test", "resources", "io", "carml", "runner", "input", "path-resolver");
+  private static final Path TEST_PATH = getTestSourcePath(Paths.get("input", "path-resolver"));
 
   @Test
   void givenPathToSingleFile_whenResolvePaths_thenReturnPathToSingleFile() {

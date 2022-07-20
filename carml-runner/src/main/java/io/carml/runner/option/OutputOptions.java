@@ -4,7 +4,7 @@ import static io.carml.runner.option.OptionOrder.OUTFORMAT_ORDER;
 import static io.carml.runner.option.OptionOrder.OUTPUT_ORDER;
 import static io.carml.runner.option.OptionOrder.PRETTY_ORDER;
 
-import io.carml.runner.model.RdfFormat;
+import io.carml.runner.format.RdfFormat;
 import java.nio.file.Path;
 import lombok.Getter;
 import picocli.CommandLine.ArgGroup;
