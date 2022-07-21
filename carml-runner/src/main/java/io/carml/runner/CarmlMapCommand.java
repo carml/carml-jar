@@ -136,7 +136,7 @@ public class CarmlMapCommand implements Callable<Integer> {
     var pretty = false;
     if (outputOptionsGroup != null) {
       outputPath = outputOptionsGroup.getOutputPath();
-      rdfFormat = outputOptionsGroup.getOutputRdfFormat();
+      rdfFormat = outputOptionsGroup.getOutputRdfFormat() != null ? outputOptionsGroup.getOutputRdfFormat() : rdfFormat;
       pretty = outputOptionsGroup.isPretty();
     }
 
