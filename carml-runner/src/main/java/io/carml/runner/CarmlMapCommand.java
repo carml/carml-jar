@@ -1,11 +1,11 @@
 package io.carml.runner;
 
-import static io.carml.runner.format.RdfFormat.n3;
-import static io.carml.runner.format.RdfFormat.nq;
-import static io.carml.runner.format.RdfFormat.nt;
-import static io.carml.runner.format.RdfFormat.trig;
-import static io.carml.runner.format.RdfFormat.trix;
-import static io.carml.runner.format.RdfFormat.ttl;
+import static io.carml.runner.format.RdfFormat.NQ;
+import static io.carml.runner.format.RdfFormat.NT;
+import static io.carml.runner.format.RdfFormat.N_3;
+import static io.carml.runner.format.RdfFormat.TRIG;
+import static io.carml.runner.format.RdfFormat.TRIX;
+import static io.carml.runner.format.RdfFormat.TTL;
 
 import io.carml.engine.rdf.RdfRmlMapper;
 import io.carml.logicalsourceresolver.CsvResolver;
@@ -47,9 +47,9 @@ import reactor.core.publisher.Flux;
 @Command(name = "map", sortOptions = false, mixinStandardHelpOptions = true)
 public class CarmlMapCommand implements Callable<Integer> {
 
-  private static final Set<RdfFormat> STREAMING_FORMAT = Set.of(nt, nq);
+  private static final Set<RdfFormat> STREAMING_FORMAT = Set.of(NT, NQ);
 
-  private static final Set<RdfFormat> POTENTIALLY_STREAMING_FORMAT = Set.of(ttl, trig, n3, trix);
+  private static final Set<RdfFormat> POTENTIALLY_STREAMING_FORMAT = Set.of(TTL, TRIG, N_3, TRIX);
 
   private final ModelLoader modelLoader;
 
@@ -88,7 +88,7 @@ public class CarmlMapCommand implements Callable<Integer> {
           .collect(ModelCollector.toModel());
 
       RmlNamespaces.applyRmlNameSpaces(mappingModel);
-      // getOutputNamespaceDeclarations(cmd).forEach(mappingModel::setNamespace);
+      // TODO: apply output namespaces to loaded mapping file for debug
 
       LOG.debug("The following mapping constructs were detected:");
       LOG.debug("{}",
@@ -129,10 +129,11 @@ public class CarmlMapCommand implements Callable<Integer> {
     return rmlMapper.map();
   }
 
+  @SuppressWarnings("java:S106")
   private long handleOutput(Flux<Statement> statements) {
     var outputOptionsGroup = outputOptions.getGroup();
     Path outputPath = null;
-    RdfFormat rdfFormat = nq;
+    RdfFormat rdfFormat = NQ;
     var pretty = false;
     if (outputOptionsGroup != null) {
       outputPath = outputOptionsGroup.getOutputPath();

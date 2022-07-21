@@ -23,7 +23,6 @@ public class CarmlRunner implements CommandLineRunner, ExitCodeGenerator {
   public void run(String... args) {
     var commandLine = new CommandLine(carmlCommand).addSubcommand("map", carmlMapCommand);
 
-    // commandLine.usage(System.out, CommandLine.Help.Ansi.ON);
     exitCode = commandLine.execute(args);
   }
 

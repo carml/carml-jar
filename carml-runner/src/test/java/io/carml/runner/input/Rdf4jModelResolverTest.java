@@ -1,8 +1,8 @@
 package io.carml.runner.input;
 
 import static io.carml.runner.TestApplication.getTestSourcePath;
-import static io.carml.runner.format.RdfFormat.nq;
-import static io.carml.runner.format.RdfFormat.ttl;
+import static io.carml.runner.format.RdfFormat.NQ;
+import static io.carml.runner.format.RdfFormat.TTL;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
@@ -30,7 +30,7 @@ class Rdf4jModelResolverTest {
     var paths = List.of(TEST_PATH.resolve(Paths.get("rml", "ttl", "test-1.rml.ttl")));
 
     // When
-    var model = rdf4jModelLoader.loadModel(paths, ttl);
+    var model = rdf4jModelLoader.loadModel(paths, TTL);
 
     // Then
     assertThat(model.size(), is(8));
@@ -68,7 +68,7 @@ class Rdf4jModelResolverTest {
     var paths = List.of(TEST_PATH.resolve(Paths.get("rml", "ttl")));
 
     // When
-    var model = rdf4jModelLoader.loadModel(paths, ttl);
+    var model = rdf4jModelLoader.loadModel(paths, TTL);
 
     // Then
     assertThat(model.size(), is(16));
@@ -92,7 +92,7 @@ class Rdf4jModelResolverTest {
     var paths = List.of(TEST_PATH.resolve(Paths.get("rml", "ttl")));
 
     // When
-    var carmlJarException = assertThrows(CarmlJarException.class, () -> rdf4jModelLoader.loadModel(paths, nq));
+    var carmlJarException = assertThrows(CarmlJarException.class, () -> rdf4jModelLoader.loadModel(paths, NQ));
 
     // Then
     assertThat(carmlJarException.getMessage(), startsWith("Exception occurred while parsing"));
@@ -104,7 +104,7 @@ class Rdf4jModelResolverTest {
     var paths = List.of(TEST_PATH.resolve(Paths.get("rml-2")));
 
     // When
-    var carmlJarException = assertThrows(CarmlJarException.class, () -> rdf4jModelLoader.loadModel(paths, nq));
+    var carmlJarException = assertThrows(CarmlJarException.class, () -> rdf4jModelLoader.loadModel(paths, NQ));
 
     // Then
     var erroredPath = TEST_PATH.resolve(Paths.get("rml-2", "foo", "test-1.rml.foo"));
