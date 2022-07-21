@@ -2,7 +2,7 @@ package io.carml.runner.input;
 
 import static io.carml.runner.TestApplication.getTestSourcePath;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -42,7 +42,7 @@ class PathResolverTest {
     var file11 = TEST_PATH.resolve(Paths.get("dir-1", "file-1-1"));
     var file21 = TEST_PATH.resolve(Paths.get("dir-2", "file-2-1"));
 
-    assertThat(paths, contains(file111, file11, file21));
+    assertThat(paths, containsInAnyOrder(file111, file11, file21));
   }
 
   @Test

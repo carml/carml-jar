@@ -107,7 +107,6 @@ class Rdf4jModelResolverTest {
     var carmlJarException = assertThrows(CarmlJarException.class, () -> rdf4jModelLoader.loadModel(paths, nq));
 
     // Then
-    var erroredPath = TEST_PATH.resolve(Paths.get("rml-2", "foo", "test-1.rml.foo"));
-    assertThat(carmlJarException.getMessage(), is(String.format("Exception occurred while parsing %s", erroredPath)));
+    assertThat(carmlJarException.getMessage(), startsWith("Exception occurred while parsing"));
   }
 }
