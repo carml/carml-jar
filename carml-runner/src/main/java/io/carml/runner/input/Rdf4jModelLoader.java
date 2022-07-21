@@ -20,12 +20,22 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class Rdf4jModelLoader implements ModelLoader {
+
+  /**
+   * Load {@link Model} from list paths, using all file {@link Path}s in the file tree starting from
+   * given {@link Path}.
+   *
+   * @param paths the {@link List} of {@link Path}s to search through and load from.
+   * @param rdfFormat the RDF format of the files. if null, the file extensions will be used to
+   *        attempt to determine the format of each file.
+   * @return the {@link Model}.
+   */
   @Override
   public Model loadModel(List<Path> paths, RdfFormat rdfFormat) {
     var specifiedRdfFormat = rdfFormat != null ? determineRdfFormat(rdfFormat.name()) : null;
 
     return paths.stream()
-        .flatMap(path -> PathResolver.resolvePaths(List.of(path))
+        .flatMap(path -> FilePathResolver.resolveFilePaths(List.of(path))
             .stream())
         .flatMap(path -> parsePathToStatements(path, specifiedRdfFormat))
         .collect(new ModelCollector());

@@ -8,11 +8,17 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public final class PathResolver {
+public final class FilePathResolver {
 
-  private PathResolver() {}
+  private FilePathResolver() {}
 
-  public static List<Path> resolvePaths(List<Path> paths) {
+  /**
+   * Find all file {@link Path}s in the file tree starting from given {@link Path}.
+   *
+   * @param paths the {@link List} of {@link Path}s to search through.
+   * @return the {@link List} of file {@link Path}s.
+   */
+  public static List<Path> resolveFilePaths(List<Path> paths) {
     return paths.stream()
         .flatMap(path -> {
           try (Stream<Path> walk = Files.walk(path)) {

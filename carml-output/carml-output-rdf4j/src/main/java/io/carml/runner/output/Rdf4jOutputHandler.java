@@ -22,6 +22,18 @@ import reactor.util.annotation.NonNull;
 @Component
 public class Rdf4jOutputHandler implements OutputHandler {
 
+  /**
+   * Write a {@link Flux} of {@link Statement}s to the provided {@link OutputStream} as RDF in the
+   * provided {@link RdfFormat} in a pretty fashion.<br>
+   * <br>
+   * This the model will be fully collected in-memory before writing to the {@link OutputStream}.
+   *
+   * @param statementFlux the {@link Flux} of {@link Statement}s.
+   * @param format the {@link RdfFormat}.
+   * @param namespaces the namespaces toe apply.
+   * @param outputStream the {@link OutputStream}.
+   * @return the amount of statements written.
+   */
   @Override
   public long outputPretty(@NonNull Flux<Statement> statementFlux, @NonNull RdfFormat format,
       @NonNull Map<String, String> namespaces, @NonNull OutputStream outputStream) {
@@ -38,6 +50,18 @@ public class Rdf4jOutputHandler implements OutputHandler {
     return model.size();
   }
 
+  /**
+   * Write a {@link Flux} of {@link Statement}s to the provided {@link OutputStream} as RDF in the
+   * provided {@link RdfFormat} in a streaming fashion.<br>
+   * <br>
+   * The output written to the {@link OutputStream} on a statement by statement basis.
+   *
+   * @param statementFlux the {@link Flux} of {@link Statement}s.
+   * @param format the {@link RdfFormat}.
+   * @param namespaces the namespaces toe apply.
+   * @param outputStream the {@link OutputStream}.
+   * @return the amount of statements written.
+   */
   @Override
   public long outputStreaming(@NonNull Flux<Statement> statementFlux, @NonNull RdfFormat format,
       @NonNull Map<String, String> namespaces, @NonNull OutputStream outputStream) {

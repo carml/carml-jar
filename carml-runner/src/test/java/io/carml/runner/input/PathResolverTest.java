@@ -23,7 +23,7 @@ class PathResolverTest {
     var inputPaths = List.of(inputPath);
 
     // When
-    var paths = PathResolver.resolvePaths(inputPaths);
+    var paths = FilePathResolver.resolveFilePaths(inputPaths);
 
     // Then
     assertThat(paths, is(List.of(inputPath)));
@@ -35,7 +35,7 @@ class PathResolverTest {
     var inputPaths = List.of(TEST_PATH);
 
     // When
-    var paths = PathResolver.resolvePaths(inputPaths);
+    var paths = FilePathResolver.resolveFilePaths(inputPaths);
 
     // Then
     var file111 = TEST_PATH.resolve(Paths.get("dir-1", "dir-1-1", "file-1-1-1"));
@@ -52,7 +52,7 @@ class PathResolverTest {
     var inputPaths = List.of(nonExistentPath);
 
     // When
-    var carmlJarException = assertThrows(CarmlJarException.class, () -> PathResolver.resolvePaths(inputPaths));
+    var carmlJarException = assertThrows(CarmlJarException.class, () -> FilePathResolver.resolveFilePaths(inputPaths));
 
     // Then
     assertThat(carmlJarException.getMessage(),
