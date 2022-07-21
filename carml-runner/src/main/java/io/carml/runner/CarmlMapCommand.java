@@ -1,11 +1,11 @@
 package io.carml.runner;
 
-import static io.carml.runner.format.RdfFormat.NQ;
-import static io.carml.runner.format.RdfFormat.NT;
-import static io.carml.runner.format.RdfFormat.N_3;
-import static io.carml.runner.format.RdfFormat.TRIG;
-import static io.carml.runner.format.RdfFormat.TRIX;
-import static io.carml.runner.format.RdfFormat.TTL;
+import static io.carml.runner.format.RdfFormat.n3;
+import static io.carml.runner.format.RdfFormat.nq;
+import static io.carml.runner.format.RdfFormat.nt;
+import static io.carml.runner.format.RdfFormat.trig;
+import static io.carml.runner.format.RdfFormat.trix;
+import static io.carml.runner.format.RdfFormat.ttl;
 
 import io.carml.engine.rdf.RdfRmlMapper;
 import io.carml.logicalsourceresolver.CsvResolver;
@@ -47,9 +47,9 @@ import reactor.core.publisher.Flux;
 @Command(name = "map", sortOptions = false, mixinStandardHelpOptions = true)
 public class CarmlMapCommand implements Callable<Integer> {
 
-  private static final Set<RdfFormat> STREAMING_FORMAT = Set.of(NT, NQ);
+  private static final Set<RdfFormat> STREAMING_FORMAT = Set.of(nt, nq);
 
-  private static final Set<RdfFormat> POTENTIALLY_STREAMING_FORMAT = Set.of(TTL, TRIG, N_3, TRIX);
+  private static final Set<RdfFormat> POTENTIALLY_STREAMING_FORMAT = Set.of(ttl, trig, n3, trix);
 
   private final ModelLoader modelLoader;
 
@@ -133,7 +133,7 @@ public class CarmlMapCommand implements Callable<Integer> {
   private long handleOutput(Flux<Statement> statements) {
     var outputOptionsGroup = outputOptions.getGroup();
     Path outputPath = null;
-    RdfFormat rdfFormat = NQ;
+    RdfFormat rdfFormat = nq;
     var pretty = false;
     if (outputOptionsGroup != null) {
       outputPath = outputOptionsGroup.getOutputPath();

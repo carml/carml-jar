@@ -1,8 +1,8 @@
 package io.carml.runner;
 
 import static io.carml.runner.TestApplication.getTestSourcePath;
-import static io.carml.runner.format.RdfFormat.NQ;
-import static io.carml.runner.format.RdfFormat.TTL;
+import static io.carml.runner.format.RdfFormat.nq;
+import static io.carml.runner.format.RdfFormat.ttl;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.eq;
@@ -55,7 +55,7 @@ class CarmlMapCommandTest {
     carmlRunner.run(args);
 
     // Then
-    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(NQ), eq(Map.of()), eq(System.out));
+    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq), eq(Map.of()), eq(System.out));
     var model = statementsCaptor.getValue()
         .collect(new ModelCollector())
         .block();
@@ -74,7 +74,7 @@ class CarmlMapCommandTest {
     carmlRunner.run(args);
 
     // Then
-    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(NQ), eq(Map.of()), eq(System.out));
+    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq), eq(Map.of()), eq(System.out));
     var model = statementsCaptor.getValue()
         .collect(new ModelCollector())
         .block();
@@ -93,7 +93,7 @@ class CarmlMapCommandTest {
     carmlRunner.run(args);
 
     // Then
-    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(TTL), eq(Map.of()), eq(System.out));
+    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(ttl), eq(Map.of()), eq(System.out));
     var model = statementsCaptor.getValue()
         .collect(new ModelCollector())
         .block();
@@ -112,7 +112,7 @@ class CarmlMapCommandTest {
     carmlRunner.run(args);
 
     // Then
-    verify(outputHandler).outputPretty(statementsCaptor.capture(), eq(TTL), eq(Map.of()), eq(System.out));
+    verify(outputHandler).outputPretty(statementsCaptor.capture(), eq(ttl), eq(Map.of()), eq(System.out));
     var model = statementsCaptor.getValue()
         .collect(new ModelCollector())
         .block();
@@ -132,7 +132,7 @@ class CarmlMapCommandTest {
     carmlRunner.run(args);
 
     // Then
-    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(NQ), eq(Map.of()),
+    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq), eq(Map.of()),
         isA(BufferedOutputStream.class));
     var model = statementsCaptor.getValue()
         .collect(new ModelCollector())

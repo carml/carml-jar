@@ -1,7 +1,7 @@
 package io.carml.runner.output;
 
-import static io.carml.runner.format.RdfFormat.NQ;
-import static io.carml.runner.format.RdfFormat.TTL;
+import static io.carml.runner.format.RdfFormat.nq;
+import static io.carml.runner.format.RdfFormat.ttl;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -47,7 +47,7 @@ class Rdf4jOutputHandlerTest {
     var statementFlux = generateStatementsFor("foo", 5);
 
     // When
-    var nrOfStatements = rdf4jOutputHandler.outputPretty(statementFlux, NQ, Map.of(), System.out);
+    var nrOfStatements = rdf4jOutputHandler.outputPretty(statementFlux, nq, Map.of(), System.out);
 
     // Then
     assertThat(nrOfStatements, is(5L));
@@ -61,7 +61,7 @@ class Rdf4jOutputHandlerTest {
     var namespaces = Map.of("ex", "https://example.com/");
 
     // When
-    var nrOfStatements = rdf4jOutputHandler.outputPretty(statementFlux, TTL, namespaces, System.out);
+    var nrOfStatements = rdf4jOutputHandler.outputPretty(statementFlux, ttl, namespaces, System.out);
 
     // Then
     assertThat(nrOfStatements, is(4L));
@@ -79,7 +79,7 @@ class Rdf4jOutputHandlerTest {
     var statementFlux = generateStatementsFor("foo", 5);
 
     // When
-    var nrOfStatements = rdf4jOutputHandler.outputStreaming(statementFlux, NQ, Map.of(), System.out);
+    var nrOfStatements = rdf4jOutputHandler.outputStreaming(statementFlux, nq, Map.of(), System.out);
 
     // Then
     assertThat(nrOfStatements, is(5L));
@@ -93,7 +93,7 @@ class Rdf4jOutputHandlerTest {
     var namespaces = Map.of("ex", "https://example.com/");
 
     // When
-    var nrOfStatements = rdf4jOutputHandler.outputStreaming(statementFlux, TTL, namespaces, System.out);
+    var nrOfStatements = rdf4jOutputHandler.outputStreaming(statementFlux, ttl, namespaces, System.out);
 
     // Then
     assertThat(nrOfStatements, is(4L));
