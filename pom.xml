@@ -30,6 +30,8 @@
         <reactor.version>3.4.21</reactor.version>
         <spring.boot.version>2.7.1</spring.boot.version>
         <picocli.version>4.6.3</picocli.version>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.organization>carml</sonar.organization>
     </properties>
 
     <modules>
