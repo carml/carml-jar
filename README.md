@@ -56,16 +56,16 @@ The following command:
 * pretty printed (`-P`)
 * to stdout.
 
-```shell
-java -jar carml-jar-X.X.X.jar  map -m rml -rsl input -of ttl -P
+```console
+java -jar carml-jar-X.jar  map -m rml -rsl input -of ttl -P
 ```
 
 ## Building the project
 
 The project can be built by running:
 
-```shell
-mvn package
+```console
+mvn clean package
 ```
 
 The runnable jar will be generated in the `/carml-app/target` dir.
