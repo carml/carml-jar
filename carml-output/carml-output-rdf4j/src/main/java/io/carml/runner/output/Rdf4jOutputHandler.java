@@ -17,13 +17,14 @@ import org.eclipse.rdf4j.rio.WriterConfig;
 import org.eclipse.rdf4j.rio.helpers.BasicWriterSettings;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
+import reactor.util.annotation.NonNull;
 
 @Component
 public class Rdf4jOutputHandler implements OutputHandler {
 
   @Override
-  public long outputPretty(Flux<Statement> statementFlux, RdfFormat format, Map<String, String> namespaces,
-      OutputStream outputStream) {
+  public long outputPretty(@NonNull Flux<Statement> statementFlux, @NonNull RdfFormat format,
+      @NonNull Map<String, String> namespaces, @NonNull OutputStream outputStream) {
     var config = new WriterConfig();
     config.set(BasicWriterSettings.PRETTY_PRINT, true);
     config.set(BasicWriterSettings.INLINE_BLANK_NODES, true);
@@ -38,8 +39,8 @@ public class Rdf4jOutputHandler implements OutputHandler {
   }
 
   @Override
-  public long outputStreaming(Flux<Statement> statementFlux, RdfFormat format, Map<String, String> namespaces,
-      OutputStream outputStream) {
+  public long outputStreaming(@NonNull Flux<Statement> statementFlux, @NonNull RdfFormat format,
+      @NonNull Map<String, String> namespaces, @NonNull OutputStream outputStream) {
     RDFWriter rdfWriter = Rio.createWriter(determineRdfFormat(format.name()), outputStream);
     AtomicLong counter = new AtomicLong();
 
