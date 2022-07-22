@@ -1,7 +1,7 @@
 package io.carml.runner.option;
 
-import static io.carml.runner.option.OptionOrder.OUT_FORMAT_ORDER;
 import static io.carml.runner.option.OptionOrder.OUTPUT_ORDER;
+import static io.carml.runner.option.OptionOrder.OUT_FORMAT_ORDER;
 import static io.carml.runner.option.OptionOrder.PRETTY_ORDER;
 
 import io.carml.runner.format.RdfFormat;
