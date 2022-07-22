@@ -131,15 +131,9 @@ public class CarmlMapCommand implements Callable<Integer> {
 
   @SuppressWarnings("java:S106")
   private long handleOutput(Flux<Statement> statements) {
-    var outputOptionsGroup = outputOptions.getGroup();
-    Path outputPath = null;
-    RdfFormat rdfFormat = nq;
-    var pretty = false;
-    if (outputOptionsGroup != null) {
-      outputPath = outputOptionsGroup.getOutputPath();
-      rdfFormat = outputOptionsGroup.getOutputRdfFormat() != null ? outputOptionsGroup.getOutputRdfFormat() : rdfFormat;
-      pretty = outputOptionsGroup.isPretty();
-    }
+    var outputPath = outputOptions.getOutputPath();
+    var rdfFormat = outputOptions.getOutputRdfFormat();
+    var pretty = outputOptions.isPretty();
 
     if (outputPath == null) {
       LOG.info("No output file specified. Outputting to console...{}", System.lineSeparator());

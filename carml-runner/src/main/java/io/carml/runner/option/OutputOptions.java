@@ -1,13 +1,12 @@
 package io.carml.runner.option;
 
-import static io.carml.runner.option.OptionOrder.OUTFORMAT_ORDER;
+import static io.carml.runner.option.OptionOrder.OUT_FORMAT_ORDER;
 import static io.carml.runner.option.OptionOrder.OUTPUT_ORDER;
 import static io.carml.runner.option.OptionOrder.PRETTY_ORDER;
 
 import io.carml.runner.format.RdfFormat;
 import java.nio.file.Path;
 import lombok.Getter;
-import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -15,22 +14,18 @@ import picocli.CommandLine.Option;
 @Command
 public class OutputOptions {
 
-  @ArgGroup(exclusive = false, order = OUTPUT_ORDER)
-  private Group group;
+  @Option(names = {"-F", "-of", "--outformat"}, defaultValue = "nq", order = OUT_FORMAT_ORDER,
+      description = "Output RDF format (see -f). Default: ${DEFAULT-VALUE}.")
+  private RdfFormat outputRdfFormat;
 
-  @Getter
-  public static class Group {
-    @Option(names = {"-o", "--output"}, order = OUTPUT_ORDER, description = { //
-        "Output file path.", //
-        "If path is directory, will default to fileName `output`.", //
-        "If left empty will output to console."})
-    private Path outputPath;
+  @Option(names = {"-o", "--output"}, order = OUTPUT_ORDER, description = { //
+      "Output file path.", //
+      "If path is directory, will default to fileName `output`.", //
+      "If left empty will output to console."})
+  private Path outputPath;
 
-    @Option(names = {"-F", "-of", "--outformat"}, order = OUTFORMAT_ORDER, description = "Output RDF format (see -f).")
-    private RdfFormat outputRdfFormat;
+  @Option(names = {"-P", "--pretty"}, order = PRETTY_ORDER,
+      description = "Serialize pretty printed output. (Caution: will cause in-memory output collection).")
+  private boolean pretty;
 
-    @Option(names = {"-P", "--pretty"}, order = PRETTY_ORDER,
-        description = "Serialize output in pretty fashion. (Caution: will cause in-memory output collection)")
-    private boolean pretty;
-  }
 }

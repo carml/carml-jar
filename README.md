@@ -14,9 +14,9 @@
 ### Map RDF file to output
 
 ```console
-Usage: carml map [-hV] (-m=<mappingFiles> [-m=<mappingFiles>]...
+Usage: carml map [-hPV] [-F=<outputRdfFormat>] [-o=<outputPath>]
+                 (-m=<mappingFiles> [-m=<mappingFiles>]...
                  [-f=<mappingFileRdfFormat>] [-r=<relativeSourceLocation>])
-                 [[-o=<outputPath>] [-t=<outputRdfFormat>] [-P]]
   -h, --help      Show this help message and exit.
   -V, --version   Print version information and exit.
   -m, --mapping=<mappingFiles>
@@ -36,14 +36,14 @@ Usage: carml map [-hV] (-m=<mappingFiles> [-m=<mappingFiles>]...
   -r, -rsl, --rel-src-loc=<relativeSourceLocation>
                   Path from which to relatively find the sources specified in
                     the mapping files.
+  -F, -of, --outformat=<outputRdfFormat>
+                  Output RDF format (see -f). Default: nq.
   -o, --output=<outputPath>
                   Output file path.
                   If path is directory, will default to fileName `output`.
                   If left empty will output to console.
-  -t, -of, --outformat=<outputRdfFormat>
-                  Output RDF format (see -f).
-  -P, --pretty    Serialize output in pretty fashion. (Caution: will cause
-                    in-memory processing)
+  -P, --pretty    Serialize pretty printed output. (Caution: will cause
+                    in-memory output collection).
 ```
 
 For example:
