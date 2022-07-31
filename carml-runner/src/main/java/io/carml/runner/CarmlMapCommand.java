@@ -32,7 +32,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.rdf4j.model.Model;
@@ -46,7 +45,7 @@ import reactor.core.publisher.Flux;
 
 @Component
 @Command(name = "map", sortOptions = false, mixinStandardHelpOptions = true)
-public class CarmlMapCommand implements Callable<Integer> {
+public class CarmlMapCommand implements Runnable {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -73,15 +72,13 @@ public class CarmlMapCommand implements Callable<Integer> {
   }
 
   @Override
-  public Integer call() {
+  public void run() {
     var rmlMapper = prepareMapper();
     var statements = map(rmlMapper);
     var nrOfStatements = handleOutput(statements);
 
     LOG.info("Finished processing.");
     LOG.info("Generated {} statements.", nrOfStatements);
-
-    return 0;
   }
 
   private RdfRmlMapper prepareMapper() {

@@ -74,6 +74,13 @@ give `TRACE` level logging.
 
 Errors logs are output to `stderr`.
 
+#### Exit codes
+The following exit codes are returned on exit.
+
+* `0`: success
+* `1`: "failure" when running the command
+* `2`: command line usage error
+
 ## Building the project
 
 The project can be built by running:

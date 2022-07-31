@@ -1,5 +1,6 @@
 package io.carml.runner;
 
+import static com.github.stefanbirkner.systemlambda.SystemLambda.catchSystemExit;
 import static io.carml.runner.TestApplication.getLogLevel;
 import static io.carml.runner.option.LoggingOptions.CARML_LOGGER;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -64,6 +65,30 @@ class CarmlRunnerTest {
         + "                  For example `-v -v`, or `-vv` or `--verbose --verbose` " //
         + "Commands: " //
         + "  map "));
+  }
+
+  static Stream<Arguments> exitCodeTestArguments() {
+    return Stream.of(//
+        Arguments.of(List.of("-h"), 0), //
+        Arguments.of(List.of("map", "-m", "some/non/existent/path"), 1), //
+        Arguments.of(List.of("foo"), 2));
+  }
+
+  @ParameterizedTest
+  @MethodSource("exitCodeTestArguments")
+  void givenArgs_whenRunAndSystemExit_thenExitCodeIsCorrect(List<String> argList, int expectedExitCode)
+      throws Exception {
+    // Given
+    var args = argList.toArray(String[]::new);
+
+    // When
+    var exitCode = catchSystemExit(() -> {
+      carmlRunner.run(args);
+      System.exit(carmlRunner.getExitCode());
+    });
+
+    // Then
+    assertThat(exitCode, is(expectedExitCode));
   }
 
   static Stream<Arguments> loggingTestArguments() {
