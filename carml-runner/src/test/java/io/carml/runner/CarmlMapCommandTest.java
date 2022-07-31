@@ -1,5 +1,6 @@
 package io.carml.runner;
 
+import static io.carml.runner.TestApplication.getStringForPath;
 import static io.carml.runner.TestApplication.getTestSourcePath;
 import static io.carml.runner.format.RdfFormat.nq;
 import static io.carml.runner.format.RdfFormat.ttl;
@@ -47,8 +48,8 @@ class CarmlMapCommandTest {
   @Test
   void givenMappingAndRelativeSourceLocationArgs_whenMapCommandRun_thenReturnStreamingNqOutput() {
     // Given
-    var mapping = getStringForPath("mapping", "mapping.rml.ttl");
-    var relativeSourceLocation = getStringForPath("source");
+    var mapping = getStringForPath(TEST_PATH, "mapping", "mapping.rml.ttl");
+    var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
     var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation};
 
     // When
@@ -65,8 +66,8 @@ class CarmlMapCommandTest {
   @Test
   void givenMappingAndMappingFormatArgs_whenMapCommandRun_thenReturnStreamingNqOutput() {
     // Given
-    var mapping = getStringForPath("mapping", "mapping.rml.ttl");
-    var relativeSourceLocation = getStringForPath("source");
+    var mapping = getStringForPath(TEST_PATH, "mapping", "mapping.rml.ttl");
+    var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
     var mappingFormat = "ttl";
     var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-f", mappingFormat};
 
@@ -84,8 +85,8 @@ class CarmlMapCommandTest {
   @Test
   void givenMappingAndStreamableOutputFormatArgs_whenMapCommandRun_thenReturnStreamingFormattedOutput() {
     // Given
-    var mapping = getStringForPath("mapping", "mapping.rml.ttl");
-    var relativeSourceLocation = getStringForPath("source");
+    var mapping = getStringForPath(TEST_PATH, "mapping", "mapping.rml.ttl");
+    var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
     var outputFormat = "ttl";
     var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-of", outputFormat};
 
@@ -103,8 +104,8 @@ class CarmlMapCommandTest {
   @Test
   void givenMappingAndOutputFormatAndPrettyArgs_whenMapCommandRun_thenReturnPrettyFormattedOutput() {
     // Given
-    var mapping = getStringForPath("mapping", "mapping.rml.ttl");
-    var relativeSourceLocation = getStringForPath("source");
+    var mapping = getStringForPath(TEST_PATH, "mapping", "mapping.rml.ttl");
+    var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
     var outputFormat = "ttl";
     var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-of", outputFormat, "-P"};
 
@@ -122,8 +123,8 @@ class CarmlMapCommandTest {
   @Test
   void givenMappingAndOutputPathArgs_whenMapCommandRun_thenOutputsNqToPathViaBufferedOutputStream() {
     // Given
-    var mapping = getStringForPath("mapping", "mapping.rml.ttl");
-    var relativeSourceLocation = getStringForPath("source");
+    var mapping = getStringForPath(TEST_PATH, "mapping", "mapping.rml.ttl");
+    var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
     var outputPath = tmpOutputDir.resolve("out.nq")
         .toString();
     var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-o", outputPath};
@@ -139,10 +140,4 @@ class CarmlMapCommandTest {
         .block();
     assertThat(model.size(), is(2));
   }
-
-  private static String getStringForPath(String first, String... more) {
-    return TEST_PATH.resolve(Paths.get(first, more))
-        .toString();
-  }
-
 }

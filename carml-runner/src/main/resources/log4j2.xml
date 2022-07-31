@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Appenders>
+        <Console name="stdout" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{ISO8601} [%thread] %highlight{%-5level} %logger{36} - %msg%n" />
+            <ThresholdFilter level="ERROR" onMatch="DENY" onMismatch="ACCEPT"/>
+        </Console>
+        <Console name="stderr" target="SYSTEM_ERR">
+            <PatternLayout pattern="%d{ISO8601} [%thread] %highlight{%-5level} %logger{36} - %msg%n%throwable" />
+            <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY" />
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="ERROR">
+            <AppenderRef ref="stdout" />
+            <AppenderRef ref="stderr" />
+        </Root>
+        <Logger name="io.carml" level="ERROR" additivity="false">
+            <AppenderRef ref="stdout" />
+            <AppenderRef ref="stderr" />
+        </Logger>
+    </Loggers>
+</Configuration>

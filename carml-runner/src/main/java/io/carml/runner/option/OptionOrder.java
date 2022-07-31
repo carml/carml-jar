@@ -15,4 +15,6 @@ final class OptionOrder {
   static final int OUTPUT_ORDER = 50;
 
   static final int PRETTY_ORDER = 60;
+
+  static final int VERBOSITY_ORDER = 60;
 }

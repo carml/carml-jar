@@ -14,7 +14,7 @@
 ### Map RDF file to output
 
 ```console
-Usage: carml map [-hPV] [-F=<outputRdfFormat>] [-o=<outputPath>]
+Usage: carml map [-hPVv] [-F=<outputRdfFormat>] [-o=<outputPath>]
                  (-m=<mappingFiles> [-m=<mappingFiles>]...
                  [-f=<mappingFileRdfFormat>] [-r=<relativeSourceLocation>])
   -h, --help      Show this help message and exit.
@@ -42,6 +42,9 @@ Usage: carml map [-hPV] [-F=<outputRdfFormat>] [-o=<outputPath>]
                   Output file path.
                   If path is directory, will default to fileName `output`.
                   If left empty will output to console.
+  -v, --verbose   Specify multiple -v or --verbose options to increase
+                    verbosity.
+                  For example `-v -v`, or `-vv` or `--verbose --verbose`
   -P, --pretty    Serialize pretty printed output. (Caution: will cause
                     in-memory output collection).
 ```
@@ -57,8 +60,26 @@ The following command:
 * to stdout.
 
 ```console
-java -jar carml-jar-X.jar  map -m rml -rsl input -of ttl -P
+java -jar carml-jar-X.jar map -m rml -rsl input -of ttl -P
 ```
+
+#### Output
+If an output path is provided (via `-o`) the RDF result is output to the specified path.
+
+By default, if no output path is provided the plain RDF result will be output to `stdout`.
+
+To get more information on what is going on during execution, the verbosity level can be increased via `-v`.
+You can get more verbosity by adding more `v`s, for example `-vvv`, which is the highest level of verbosity and will
+give `TRACE` level logging.
+
+Errors logs are output to `stderr`.
+
+#### Exit codes
+The following exit codes are returned on exit.
+
+* `0`: success
+* `1`: "failure" when running the command
+* `2`: command line usage error
 
 ## Building the project
 

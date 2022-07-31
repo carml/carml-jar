@@ -15,6 +15,7 @@ import io.carml.model.Resource;
 import io.carml.model.TriplesMap;
 import io.carml.runner.format.RdfFormat;
 import io.carml.runner.input.ModelLoader;
+import io.carml.runner.option.LoggingOptions;
 import io.carml.runner.option.MappingFileOptions;
 import io.carml.runner.option.OutputOptions;
 import io.carml.runner.output.OutputHandler;
@@ -31,8 +32,8 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.util.ModelCollector;
@@ -42,10 +43,11 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import reactor.core.publisher.Flux;
 
-@Slf4j
 @Component
 @Command(name = "map", sortOptions = false, mixinStandardHelpOptions = true)
-public class CarmlMapCommand implements Callable<Integer> {
+public class CarmlMapCommand implements Runnable {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private static final Set<RdfFormat> STREAMING_FORMAT = Set.of(nt, nq);
 
@@ -54,6 +56,9 @@ public class CarmlMapCommand implements Callable<Integer> {
   private final ModelLoader modelLoader;
 
   private final OutputHandler outputHandler;
+
+  @Mixin
+  private LoggingOptions loggingOptions;
 
   @Mixin
   private MappingFileOptions mappingFileOptions;
@@ -67,15 +72,13 @@ public class CarmlMapCommand implements Callable<Integer> {
   }
 
   @Override
-  public Integer call() {
+  public void run() {
     var rmlMapper = prepareMapper();
     var statements = map(rmlMapper);
     var nrOfStatements = handleOutput(statements);
 
     LOG.info("Finished processing.");
     LOG.info("Generated {} statements.", nrOfStatements);
-
-    return 0;
   }
 
   private RdfRmlMapper prepareMapper() {
@@ -91,7 +94,7 @@ public class CarmlMapCommand implements Callable<Integer> {
       // TODO: apply output namespaces to loaded mapping file for debug
 
       LOG.debug("The following mapping constructs were detected:");
-      LOG.debug("{}",
+      LOG.debug("{}{}", System.lineSeparator(),
           ModelSerializer.serializeAsRdf(mappingModel, RDFFormat.TURTLE, ModelSerializer.SIMPLE_WRITER_CONFIG, n -> n));
     }
 
@@ -104,6 +107,7 @@ public class CarmlMapCommand implements Callable<Integer> {
     var relativeSourceLocation = mappingFileOptions.getGroup()
         .getRelativeSourceLocation();
     if (relativeSourceLocation != null) {
+      LOG.debug("Setting relative source location {} ...", () -> relativeSourceLocation);
       mapperBuilder.fileResolver(relativeSourceLocation);
     }
 
@@ -114,7 +118,7 @@ public class CarmlMapCommand implements Callable<Integer> {
     List<Path> paths = mappingFileOptions.getGroup()
         .getMappingFiles();
 
-    LOG.info("Loading mapping from paths {} ...", paths);
+    LOG.info("Loading mapping from paths {} ...", () -> paths);
 
     var mappingFormat = mappingFileOptions.getGroup()
         .getMappingFileRdfFormat();
@@ -136,10 +140,10 @@ public class CarmlMapCommand implements Callable<Integer> {
     var pretty = outputOptions.isPretty();
 
     if (outputPath == null) {
-      LOG.info("No output file specified. Outputting to console...{}", System.lineSeparator());
+      LOG.info("No output file specified. Outputting to console ...{}", System::lineSeparator);
       return outputRdf(statements, rdfFormat, Map.of(), System.out, pretty);
     } else {
-      LOG.info("Writing output to {} ...", outputPath);
+      LOG.info("Writing output to {} ...", () -> outputPath);
       try (var outputStream = new BufferedOutputStream(Files.newOutputStream(outputPath, StandardOpenOption.CREATE))) {
         return outputRdf(statements, rdfFormat, Map.of(), outputStream, pretty);
       } catch (IOException ioException) {
