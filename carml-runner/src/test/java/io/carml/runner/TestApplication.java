@@ -6,6 +6,9 @@ import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.eclipse.rdf4j.model.Statement;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -22,6 +25,19 @@ public class TestApplication {
   public static Path getTestSourcePath(Path toResolve) {
     return Paths.get("src", "test", "resources", "io", "carml", "runner")
         .resolve(toResolve);
+  }
+
+  public static String getStringForPath(Path base, String first, String... more) {
+    return base.resolve(Paths.get(first, more))
+        .toString();
+  }
+
+  public static Level getLogLevel(String name) {
+    LoggerContext loggerContext = LoggerContext.getContext(false);
+    LoggerConfig loggerConfig = loggerContext.getConfiguration()
+        .getLoggerConfig(name);
+
+    return loggerConfig.getLevel();
   }
 
   @Bean

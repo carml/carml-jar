@@ -30,6 +30,7 @@
         <reactor.version>3.4.21</reactor.version>
         <spring.boot.version>2.7.2</spring.boot.version>
         <picocli.version>4.6.3</picocli.version>
+        <log4j.version>2.18.0</log4j.version>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.organization>carml</sonar.organization>
     </properties>
@@ -53,6 +54,12 @@
                 <groupId>info.picocli</groupId>
                 <artifactId>picocli-spring-boot-starter</artifactId>
                 <version>${picocli.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-starter-logging</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.carml</groupId>
@@ -96,6 +103,13 @@
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
                 <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j</artifactId>
+                <version>${log4j.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>io.projectreactor</groupId>
