@@ -6,6 +6,10 @@ import static io.carml.runner.format.RdfFormat.nt;
 import static io.carml.runner.format.RdfFormat.trig;
 import static io.carml.runner.format.RdfFormat.trix;
 import static io.carml.runner.format.RdfFormat.ttl;
+import static io.carml.runner.option.OptionOrder.PREFIX_MAPPING_ORDER;
+import static io.carml.runner.option.OptionOrder.PREFIX_ORDER;
+import static picocli.CommandLine.ExitCode.OK;
+import static picocli.CommandLine.ExitCode.USAGE;
 
 import io.carml.engine.rdf.RdfRmlMapper;
 import io.carml.logicalsourceresolver.CsvResolver;
@@ -19,6 +23,8 @@ import io.carml.runner.option.LoggingOptions;
 import io.carml.runner.option.MappingFileOptions;
 import io.carml.runner.option.OutputOptions;
 import io.carml.runner.output.OutputHandler;
+import io.carml.runner.prefix.NamespacePrefixMapper;
+import io.carml.runner.prefix.PrefixMappingException;
 import io.carml.util.ModelSerializer;
 import io.carml.util.RmlMappingLoader;
 import io.carml.util.RmlNamespaces;
@@ -29,9 +35,11 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.rdf4j.model.Model;
@@ -41,11 +49,12 @@ import org.eclipse.rdf4j.rio.RDFFormat;
 import org.springframework.stereotype.Component;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Option;
 import reactor.core.publisher.Flux;
 
 @Component
 @Command(name = "map", sortOptions = false, mixinStandardHelpOptions = true)
-public class CarmlMapCommand implements Runnable {
+public class CarmlMapCommand implements Callable<Integer> {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -57,6 +66,10 @@ public class CarmlMapCommand implements Runnable {
 
   private final OutputHandler outputHandler;
 
+  private final NamespacePrefixMapper namespacePrefixMapper;
+
+  private Map<String, String> namespaces;
+
   @Mixin
   private LoggingOptions loggingOptions;
 
@@ -66,19 +79,42 @@ public class CarmlMapCommand implements Runnable {
   @Mixin
   private OutputOptions outputOptions;
 
-  public CarmlMapCommand(ModelLoader modelLoader, OutputHandler outputHandler) {
+  @Option(names = {"-M", "-pm", "--prefix-mapping"}, order = PREFIX_MAPPING_ORDER,
+      description = {"File or directory path(s) containing prefix mappings.",
+          "Files must be JSON or YAML files containing a map of prefix declarations.",
+          "File names must have either .json or .yaml/.yml file extensions."})
+  private final List<Path> prefixMappings = new ArrayList<>();
+
+  @Option(names = {"-p", "--prefixes"}, split = ",", order = PREFIX_ORDER, description = {
+      "Declares which prefixes to apply to the output.", "Can be a prefix reference or an inline prefix declaration.",
+      "A prefix reference will be resolved against the provided prefix mapping (`-pm`), or the default prefix mapping.",
+      "An inline prefix declaration can be provided as 'prefix=iri. For example: ex=http://example.com/'",
+      "Multiple declarations can be separated by ','. For example: ex=http://example.com/,foo,bar"})
+  private final List<String> prefixDeclarations = new ArrayList<>();
+
+  public CarmlMapCommand(ModelLoader modelLoader, OutputHandler outputHandler,
+      NamespacePrefixMapper namespacePrefixMapper) {
     this.modelLoader = modelLoader;
     this.outputHandler = outputHandler;
+    this.namespacePrefixMapper = namespacePrefixMapper;
   }
 
   @Override
-  public void run() {
+  public Integer call() {
+    try {
+      namespaces = namespacePrefixMapper.getNamespacePrefixes(prefixDeclarations, prefixMappings);
+    } catch (PrefixMappingException prefixMappingException) {
+      LOG.error("{}", prefixMappingException.getMessage(), prefixMappingException);
+      return USAGE;
+    }
     var rmlMapper = prepareMapper();
     var statements = map(rmlMapper);
     var nrOfStatements = handleOutput(statements);
 
     LOG.info("Finished processing.");
     LOG.info("Generated {} statements.", nrOfStatements);
+
+    return OK;
   }
 
   private RdfRmlMapper prepareMapper() {
@@ -91,7 +127,7 @@ public class CarmlMapCommand implements Runnable {
           .collect(ModelCollector.toModel());
 
       RmlNamespaces.applyRmlNameSpaces(mappingModel);
-      // TODO: apply output namespaces to loaded mapping file for debug
+      namespaces.forEach(mappingModel::setNamespace);
 
       LOG.debug("The following mapping constructs were detected:");
       LOG.debug("{}{}", System.lineSeparator(),
@@ -141,11 +177,11 @@ public class CarmlMapCommand implements Runnable {
 
     if (outputPath == null) {
       LOG.info("No output file specified. Outputting to console ...{}", System::lineSeparator);
-      return outputRdf(statements, rdfFormat, Map.of(), System.out, pretty);
+      return outputRdf(statements, rdfFormat, namespaces, System.out, pretty);
     } else {
       LOG.info("Writing output to {} ...", () -> outputPath);
       try (var outputStream = new BufferedOutputStream(Files.newOutputStream(outputPath, StandardOpenOption.CREATE))) {
-        return outputRdf(statements, rdfFormat, Map.of(), outputStream, pretty);
+        return outputRdf(statements, rdfFormat, namespaces, outputStream, pretty);
       } catch (IOException ioException) {
         throw new CarmlJarException(String.format("Error writing to output path %s", outputPath), ioException);
       }

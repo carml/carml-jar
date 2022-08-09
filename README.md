@@ -1,4 +1,5 @@
 # carml-jar
+
 **A CLI for CARML**
 
 [![Build](https://github.com/carml/carml-jar/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/carml/carml-jar/actions/workflows/build.yml)
@@ -14,9 +15,11 @@
 ### Map RDF file to output
 
 ```console
-Usage: carml map [-hPVv] [-F=<outputRdfFormat>] [-o=<outputPath>]
-                 (-m=<mappingFiles> [-m=<mappingFiles>]...
-                 [-f=<mappingFileRdfFormat>] [-r=<relativeSourceLocation>])
+Usage:  map [-hPVv] [-F=<outputRdfFormat>] [-o=<outputPath>]
+            [-M=<prefixMappings>]... [-p=<prefixDeclarations>[,
+            <prefixDeclarations>...]]... (-m=<mappingFiles>
+            [-m=<mappingFiles>]... [-f=<mappingFileRdfFormat>]
+            [-r=<relativeSourceLocation>])
   -h, --help      Show this help message and exit.
   -V, --version   Print version information and exit.
   -m, --mapping=<mappingFiles>
@@ -42,16 +45,32 @@ Usage: carml map [-hPVv] [-F=<outputRdfFormat>] [-o=<outputPath>]
                   Output file path.
                   If path is directory, will default to fileName `output`.
                   If left empty will output to console.
+  -M, -pm, --prefix-mapping=<prefixMappings>
+                  File or directory path(s) containing prefix mappings.
+                  Files must be JSON or YAML files containing a map of prefix
+                    declarations.
+                  File names must have either .json or .yaml/.yml file
+                    extensions.
+  -p, --prefixes=<prefixDeclarations>[,<prefixDeclarations>...]
+                  Declares which prefixes to apply to the output.
+                  Can be a prefix reference or an inline prefix declaration.
+                  A prefix reference will be resolved against the provided
+                    prefix mapping (`-pm`), or the default prefix mapping.
+                  An inline prefix declaration can be provided as 'prefix=iri.
+                    For example: ex=http://example.com/'
+                  Multiple declarations can be separated by ','. For example:
+                    ex=http://example.com/,foo,bar
+  -P, --pretty    Serialize pretty printed output. (Caution: will cause
+                    in-memory output collection).
   -v, --verbose   Specify multiple -v or --verbose options to increase
                     verbosity.
                   For example `-v -v`, or `-vv` or `--verbose --verbose`
-  -P, --pretty    Serialize pretty printed output. (Caution: will cause
-                    in-memory output collection).
 ```
 
 For example:
 
 The following command:
+
 * maps (`map`) all mapping files
 * under the 'rml' directory (`-m rml`)
 * using the relative source location 'input' (`-rsl input`)
@@ -64,6 +83,7 @@ java -jar carml-jar-X.jar map -m rml -rsl input -of ttl -P
 ```
 
 #### Output
+
 If an output path is provided (via `-o`) the RDF result is output to the specified path.
 
 By default, if no output path is provided the plain RDF result will be output to `stdout`.
@@ -74,7 +94,46 @@ give `TRACE` level logging.
 
 Errors logs are output to `stderr`.
 
+##### Namespace Prefixes
+
+To generate output with prefixed IRIs namespace prefixes can be specified via `-p`.
+The prefix definition can be provided inline by using the format `prefix=iri`. For example:
+
+```console
+-p ex=http://example.org/
+```
+
+The prefix can also reference a prefix defined in a prefix mapping document provided via `-pm`. For example:
+
+```console
+-p foo,bar -pm /path/to/prefix/mapping.json
+```
+
+A prefix mapping file is a JSON or a YAML file that provides a map of key values, where the key is the prefix and
+the value is the name (the IRI). JSON files **must** have file name with a `.json` file extension and YAML files **
+must**
+have a `.yaml` or `.yml` file extension.
+
+Example contents of a JSON prefix mapping file:
+
+```json
+{
+  "foo": "http://foo.org/",
+  "bar": "http://bar.org#"
+}
+```
+
+Example contents of a YAML prefix mapping file:
+
+```yaml
+foo: http://foo.org/
+bar: http://bar.org#
+```
+
+If no prefix mapping document is provided via `-pm` the default [prefix.cc](https://prefix.cc) mappings will be used.
+
 #### Exit codes
+
 The following exit codes are returned on exit.
 
 * `0`: success
