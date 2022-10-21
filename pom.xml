@@ -27,7 +27,7 @@
         <rdf4j.version>4.2.0</rdf4j.version>
         <classgraph.version>4.8.149</classgraph.version>
         <lombok.version>1.18.24</lombok.version>
-        <reactor.version>3.4.23</reactor.version>
+        <reactor.version>3.4.24</reactor.version>
         <spring.boot.version>2.7.4</spring.boot.version>
         <picocli.version>4.6.3</picocli.version>
         <log4j.version>2.19.0</log4j.version>
