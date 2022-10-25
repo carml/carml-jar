@@ -1,19 +1,11 @@
 package io.carml.runner;
 
-import static io.carml.runner.format.RdfFormat.n3;
-import static io.carml.runner.format.RdfFormat.nq;
-import static io.carml.runner.format.RdfFormat.nt;
-import static io.carml.runner.format.RdfFormat.trig;
-import static io.carml.runner.format.RdfFormat.trix;
-import static io.carml.runner.format.RdfFormat.ttl;
-
 import io.carml.engine.rdf.RdfRmlMapper;
 import io.carml.logicalsourceresolver.CsvResolver;
 import io.carml.logicalsourceresolver.JsonPathResolver;
 import io.carml.logicalsourceresolver.XPathResolver;
 import io.carml.model.Resource;
 import io.carml.model.TriplesMap;
-import io.carml.runner.format.RdfFormat;
 import io.carml.runner.input.ModelLoader;
 import io.carml.runner.option.LoggingOptions;
 import io.carml.runner.option.MappingFileOptions;
@@ -28,7 +20,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,16 +33,13 @@ import org.springframework.stereotype.Component;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 
 @Component
 @Command(name = "map", sortOptions = false, mixinStandardHelpOptions = true)
 public class CarmlMapCommand implements Runnable {
 
   private static final Logger LOG = LogManager.getLogger();
-
-  private static final Set<RdfFormat> STREAMING_FORMAT = Set.of(nt, nq);
-
-  private static final Set<RdfFormat> POTENTIALLY_STREAMING_FORMAT = Set.of(ttl, trig, n3, trix);
 
   private final ModelLoader modelLoader;
 
@@ -143,8 +131,17 @@ public class CarmlMapCommand implements Runnable {
       LOG.info("No output file specified. Outputting to console ...{}", System::lineSeparator);
       return outputRdf(statements, rdfFormat, Map.of(), System.out, pretty);
     } else {
-      LOG.info("Writing output to {} ...", () -> outputPath);
-      try (var outputStream = new BufferedOutputStream(Files.newOutputStream(outputPath, StandardOpenOption.CREATE))) {
+      if (!Files.isDirectory(outputPath)) {
+        try {
+          Files.createDirectories(outputPath.getParent());
+        } catch (IOException ioException) {
+          throw new CarmlJarException(String.format("Error creating directory %s", outputPath), ioException);
+        }
+      } else {
+        outputPath = outputPath.resolve("output");
+      }
+      LOG.info("Writing output to {} ...", outputPath);
+      try (var outputStream = new BufferedOutputStream(Files.newOutputStream(outputPath))) {
         return outputRdf(statements, rdfFormat, Map.of(), outputStream, pretty);
       } catch (IOException ioException) {
         throw new CarmlJarException(String.format("Error writing to output path %s", outputPath), ioException);
@@ -152,16 +149,13 @@ public class CarmlMapCommand implements Runnable {
     }
   }
 
-  private long outputRdf(Flux<Statement> statements, RdfFormat format, Map<String, String> namespaces,
+  private long outputRdf(Flux<Statement> statements, String rdfFormat, Map<String, String> namespaces,
       OutputStream outputStream, boolean pretty) {
-    if (isOutputStreamable(format, pretty)) {
-      return outputHandler.outputStreaming(statements, format, namespaces, outputStream);
+    if (outputHandler.isFormatStreamable(rdfFormat, pretty)) {
+      return outputHandler.outputStreaming(statements.publishOn(Schedulers.boundedElastic()), rdfFormat, namespaces,
+          outputStream);
     } else {
-      return outputHandler.outputPretty(statements, format, namespaces, outputStream);
+      return outputHandler.outputPretty(statements, rdfFormat, namespaces, outputStream);
     }
-  }
-
-  private boolean isOutputStreamable(RdfFormat format, boolean pretty) {
-    return STREAMING_FORMAT.contains(format) || (!pretty && POTENTIALLY_STREAMING_FORMAT.contains(format));
   }
 }

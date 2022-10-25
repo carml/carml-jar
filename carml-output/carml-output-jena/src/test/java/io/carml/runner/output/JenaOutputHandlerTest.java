@@ -24,9 +24,9 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import reactor.core.publisher.Flux;
 
-class Rdf4jOutputHandlerTest {
+class JenaOutputHandlerTest {
 
-  private final Rdf4jOutputHandler rdf4jOutputHandler = new Rdf4jOutputHandler();
+  private final JenaOutputHandler jenaOutputHandler = new JenaOutputHandler();
 
   private ByteArrayOutputStream outContent;
 
@@ -49,7 +49,7 @@ class Rdf4jOutputHandlerTest {
     var statementFlux = generateStatementsFor("foo", 5);
 
     // When
-    var nrOfStatements = rdf4jOutputHandler.outputPretty(statementFlux, nq.name(), Map.of(), System.out);
+    var nrOfStatements = jenaOutputHandler.outputPretty(statementFlux, nq.name(), Map.of(), System.out);
 
     // Then
     assertThat(nrOfStatements, is(5L));
@@ -63,7 +63,7 @@ class Rdf4jOutputHandlerTest {
     var namespaces = Map.of("ex", "https://example.com/");
 
     // When
-    var nrOfStatements = rdf4jOutputHandler.outputPretty(statementFlux, ttl.name(), namespaces, System.out);
+    var nrOfStatements = jenaOutputHandler.outputPretty(statementFlux, ttl.name(), namespaces, System.out);
 
     // Then
     assertThat(nrOfStatements, is(4L));
@@ -71,7 +71,7 @@ class Rdf4jOutputHandlerTest {
     var namespaceDeclaration = "@prefix ex: <https://example.com/> .";
     assertThat(StringUtils.countMatches(outContent.toString(), namespaceDeclaration), is(1));
 
-    var prettyTtlStatementWithBlankNodesInlined = "[] a [] .";
+    var prettyTtlStatementWithBlankNodesInlined = "[ a       []";
     assertThat(StringUtils.countMatches(outContent.toString(), prettyTtlStatementWithBlankNodesInlined), is(4));
   }
 
@@ -81,7 +81,7 @@ class Rdf4jOutputHandlerTest {
     var statementFlux = generateStatementsFor("foo", 5);
 
     // When
-    var nrOfStatements = rdf4jOutputHandler.outputStreaming(statementFlux, nq.name(), Map.of(), System.out);
+    var nrOfStatements = jenaOutputHandler.outputStreaming(statementFlux, nq.name(), Map.of(), System.out);
 
     // Then
     assertThat(nrOfStatements, is(5L));
@@ -95,17 +95,17 @@ class Rdf4jOutputHandlerTest {
     var namespaces = Map.of("ex", "https://example.com/");
 
     // When
-    var nrOfStatements = rdf4jOutputHandler.outputStreaming(statementFlux, ttl.name(), namespaces, System.out);
+    var nrOfStatements = jenaOutputHandler.outputStreaming(statementFlux, ttl.name(), namespaces, System.out);
 
     // Then
     assertThat(nrOfStatements, is(4L));
 
     assertThat(StringUtils.countMatches(outContent.toString(), "@prefix ex: <https://example.com/> ."), is(1));
 
-    assertThat(StringUtils.countMatches(outContent.toString(), "_:sub-bar-0 a _:obj-bar-0 ."), is(1));
-    assertThat(StringUtils.countMatches(outContent.toString(), "_:sub-bar-1 a _:obj-bar-1 ."), is(1));
-    assertThat(StringUtils.countMatches(outContent.toString(), "_:sub-bar-2 a _:obj-bar-2 ."), is(1));
-    assertThat(StringUtils.countMatches(outContent.toString(), "_:sub-bar-3 a _:obj-bar-3 ."), is(1));
+    assertThat(StringUtils.countMatches(outContent.toString(), "_:b0    a       _:b1 ."), is(1));
+    assertThat(StringUtils.countMatches(outContent.toString(), "_:b2    a       _:b3 ."), is(1));
+    assertThat(StringUtils.countMatches(outContent.toString(), "_:b4    a       _:b5 ."), is(1));
+    assertThat(StringUtils.countMatches(outContent.toString(), "_:b6    a       _:b7 ."), is(1));
   }
 
   static Stream<Arguments> formatStreamableArgs() {
@@ -113,7 +113,7 @@ class Rdf4jOutputHandlerTest {
         Arguments.of("ttl", true, false), //
         Arguments.of("nq", false, true), //
         Arguments.of("nq", true, true), //
-        Arguments.of("trigs", false, true));
+        Arguments.of("pbrdf", false, true));
   }
 
   @ParameterizedTest
@@ -122,7 +122,7 @@ class Rdf4jOutputHandlerTest {
       boolean expectedStreamable) {
     // Given
     // When
-    boolean isStreamable = rdf4jOutputHandler.isFormatStreamable(rdfFormat, pretty);
+    boolean isStreamable = jenaOutputHandler.isFormatStreamable(rdfFormat, pretty);
 
     // Then
     assertThat(isStreamable, is(expectedStreamable));
