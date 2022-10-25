@@ -1,5 +1,6 @@
 package io.carml.runner;
 
+import static com.github.stefanbirkner.systemlambda.SystemLambda.catchSystemExit;
 import static io.carml.runner.TestApplication.getStringForPath;
 import static io.carml.runner.TestApplication.getTestSourcePath;
 import static io.carml.runner.format.RdfFormat.nq;
@@ -9,6 +10,7 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.verify;
+import static picocli.CommandLine.ExitCode.USAGE;
 
 import io.carml.runner.output.OutputHandler;
 import java.io.BufferedOutputStream;
@@ -139,5 +141,23 @@ class CarmlMapCommandTest {
         .collect(new ModelCollector())
         .block();
     assertThat(model.size(), is(2));
+  }
+
+  @Test
+  void givenIncorrectPrefixMapping_whenMapCommandRun_thenExitWithUsageCode() throws Exception {
+    // Given
+    var mapping = getStringForPath(TEST_PATH, "mapping", "mapping.rml.ttl");
+    var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
+    var args =
+        new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-pm", relativeSourceLocation, "-p", "foo"};
+
+    // When
+    var exitCode = catchSystemExit(() -> {
+      carmlRunner.run(args);
+      System.exit(carmlRunner.getExitCode());
+    });
+
+    // Then
+    assertThat(exitCode, is(USAGE));
   }
 }

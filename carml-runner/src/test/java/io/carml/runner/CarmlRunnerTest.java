@@ -58,7 +58,7 @@ class CarmlRunnerTest {
     carmlRunner.run(args);
 
     // Then
-    assertThat(outContent.toString(), equalToCompressingWhiteSpace("Usage: carml [-hVv] [COMMAND] " //
+    assertThat(outContent.toString(), equalToCompressingWhiteSpace("Usage:  [-hVv] [COMMAND] " //
         + "  -h, --help      Show this help message and exit. " //
         + "  -V, --version   Print version information and exit. " //
         + "  -v, --verbose   Specify multiple -v or --verbose options to increase verbosity. " //
