@@ -30,6 +30,7 @@ import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.util.ModelCollector;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StopWatch;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import reactor.core.publisher.Flux;
@@ -61,12 +62,18 @@ public class CarmlMapCommand implements Runnable {
 
   @Override
   public void run() {
+    StopWatch stopWatch = new StopWatch();
+    stopWatch.start();
+
     var rmlMapper = prepareMapper();
     var statements = map(rmlMapper);
     var nrOfStatements = handleOutput(statements);
 
+    stopWatch.stop();
     LOG.info("Finished processing.");
     LOG.info("Generated {} statements.", nrOfStatements);
+    LOG.info("Processing took: {} seconds,{}{}", stopWatch::getTotalTimeSeconds, System::lineSeparator,
+        stopWatch::prettyPrint);
   }
 
   private RdfRmlMapper prepareMapper() {
