@@ -1,6 +1,5 @@
 package io.carml.runner.output;
 
-import io.carml.runner.format.RdfFormat;
 import java.io.OutputStream;
 import java.util.Map;
 import lombok.NonNull;
@@ -13,28 +12,38 @@ public interface OutputHandler {
 
   /**
    * Write a {@link Flux} of {@link Statement}s to the provided {@link OutputStream} as RDF in the
-   * provided {@link RdfFormat} in a pretty fashion.
+   * referenced RDF format in a pretty fashion.
    *
-   * @param statementFlux the {@link Flux} of {@link Statement}s.
-   * @param format the {@link RdfFormat}.
-   * @param namespaces the namespaces toe apply.
-   * @param outputStream the {@link OutputStream}.
-   * @return the amount of statements written.
+   * @param statementFlux The {@link Flux} of {@link Statement}s.
+   * @param rdfFormat The RDF format reference.
+   * @param namespaces The namespaces toe apply.
+   * @param outputStream The {@link OutputStream}.
+   * @return the number of statements written.
    */
-  long outputPretty(@NonNull Flux<Statement> statementFlux, @NonNull RdfFormat format,
+  long outputPretty(@NonNull Flux<Statement> statementFlux, @NonNull String rdfFormat,
       @NonNull Map<String, String> namespaces, @NonNull OutputStream outputStream);
 
 
   /**
    * Write a {@link Flux} of {@link Statement}s to the provided {@link OutputStream} as RDF in the
-   * provided {@link RdfFormat} in a streaming fashion.
+   * referenced RDF format in a streaming fashion.
    *
-   * @param statementFlux the {@link Flux} of {@link Statement}s.
-   * @param format the {@link RdfFormat}.
-   * @param namespaces the namespaces toe apply.
-   * @param outputStream the {@link OutputStream}.
-   * @return the amount of statements written.
+   * @param statementFlux The {@link Flux} of {@link Statement}s.
+   * @param rdfFormat The RDF format reference.
+   * @param namespaces The namespaces toe apply.
+   * @param outputStream The {@link OutputStream}.
+   * @return the number of statements written.
    */
-  long outputStreaming(@NonNull Flux<Statement> statementFlux, @NonNull RdfFormat format,
+  long outputStreaming(@NonNull Flux<Statement> statementFlux, @NonNull String rdfFormat,
       @NonNull Map<String, String> namespaces, @NonNull OutputStream outputStream);
+
+  /**
+   * Determines whether the RDF format reference is streamable taking into account the value of
+   * {@code pretty}.
+   *
+   * @param rdfFormat The RDF format reference.
+   * @param pretty The {@code boolean} value.
+   * @return {@code boolean} value indicating streamability.
+   */
+  boolean isFormatStreamable(@NonNull String rdfFormat, boolean pretty);
 }

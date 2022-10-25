@@ -83,6 +83,11 @@
                 <version>${carml.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.carml</groupId>
+                <artifactId>carml-converters-jena</artifactId>
+                <version>${carml.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.eclipse.rdf4j</groupId>
                 <artifactId>rdf4j-bom</artifactId>
                 <version>${rdf4j.version}</version>
@@ -212,7 +217,7 @@
                                             <limit>
                                                 <counter>INSTRUCTION</counter>
                                                 <value>COVEREDRATIO</value>
-                                                <minimum>0.8</minimum>
+                                                <minimum>0.7</minimum>
                                             </limit>
                                         </limits>
                                         <excludes />
