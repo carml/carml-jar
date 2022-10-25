@@ -17,8 +17,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
-import org.eclipse.rdf4j.model.ValueFactory;
-import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.util.ModelCollector;
 import org.eclipse.rdf4j.rio.RDFHandlerException;
 import org.eclipse.rdf4j.rio.RDFWriter;
@@ -31,8 +29,6 @@ import reactor.util.annotation.NonNull;
 
 @Component
 public class Rdf4jOutputHandler implements OutputHandler {
-
-  private static final ValueFactory VALUE_FACTORY = SimpleValueFactory.getInstance();
 
   private static final Set<String> STREAMING_FORMAT = Set.of(nt.name(), nq.name());
 
