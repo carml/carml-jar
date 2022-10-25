@@ -58,7 +58,7 @@ class CarmlMapCommandTest {
     carmlRunner.run(args);
 
     // Then
-    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq), eq(Map.of()), eq(System.out));
+    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
     var model = statementsCaptor.getValue()
         .collect(new ModelCollector())
         .block();
@@ -77,7 +77,7 @@ class CarmlMapCommandTest {
     carmlRunner.run(args);
 
     // Then
-    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq), eq(Map.of()), eq(System.out));
+    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
     var model = statementsCaptor.getValue()
         .collect(new ModelCollector())
         .block();
@@ -96,7 +96,7 @@ class CarmlMapCommandTest {
     carmlRunner.run(args);
 
     // Then
-    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(ttl), eq(Map.of()), eq(System.out));
+    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(ttl.name()), eq(Map.of()), eq(System.out));
     var model = statementsCaptor.getValue()
         .collect(new ModelCollector())
         .block();
@@ -115,7 +115,7 @@ class CarmlMapCommandTest {
     carmlRunner.run(args);
 
     // Then
-    verify(outputHandler).outputPretty(statementsCaptor.capture(), eq(ttl), eq(Map.of()), eq(System.out));
+    verify(outputHandler).outputPretty(statementsCaptor.capture(), eq(ttl.name()), eq(Map.of()), eq(System.out));
     var model = statementsCaptor.getValue()
         .collect(new ModelCollector())
         .block();
@@ -135,7 +135,7 @@ class CarmlMapCommandTest {
     carmlRunner.run(args);
 
     // Then
-    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq), eq(Map.of()),
+    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()),
         isA(BufferedOutputStream.class));
     var model = statementsCaptor.getValue()
         .collect(new ModelCollector())

@@ -9,13 +9,17 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>carml-output-rdf4j</artifactId>
+    <artifactId>carml-output-jena</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>io.carml</groupId>
             <artifactId>carml-runner</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.carml</groupId>
+            <artifactId>carml-converters-jena</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>

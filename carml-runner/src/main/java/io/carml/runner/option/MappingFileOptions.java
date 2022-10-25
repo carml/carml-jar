@@ -9,11 +9,9 @@ import java.nio.file.Path;
 import java.util.List;
 import lombok.Getter;
 import picocli.CommandLine.ArgGroup;
-import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 @Getter
-@Command
 public class MappingFileOptions {
 
   @ArgGroup(exclusive = false, order = MAPPING_ORDER, multiplicity = "1")
@@ -28,11 +26,14 @@ public class MappingFileOptions {
     @Option(names = {"-f", "--format"}, order = FORMAT_ORDER, description = { //
         "Mapping file RDF format:", //
         "ttl (text/turtle),", //
+        "ttls (application/x-turtlestar)", //
         "nt (application/n-triples),", //
         "nq (application/n-quads),", //
         "rdf (application/rdf+xml),", //
         "jsonld (application/ld+json),", //
+        "ndjsonld (application/x-ld+ndjson)", //
         "trig (application/trig),", //
+        "trigs (application/x-trigstar)", //
         "n3 (text/n3),", //
         "trix (application/trix),", //
         "brf (application/x-binary-rdf),", //

@@ -23,14 +23,14 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <carml.version>0.4.1</carml.version>
-        <rdf4j.version>4.1.0</rdf4j.version>
+        <carml.version>0.4.4</carml.version>
+        <rdf4j.version>4.2.0</rdf4j.version>
         <classgraph.version>4.8.149</classgraph.version>
         <lombok.version>1.18.24</lombok.version>
-        <reactor.version>3.4.21</reactor.version>
-        <spring.boot.version>2.7.2</spring.boot.version>
+        <reactor.version>3.4.24</reactor.version>
+        <spring.boot.version>2.7.5</spring.boot.version>
         <picocli.version>4.6.3</picocli.version>
-        <log4j.version>2.18.0</log4j.version>
+        <log4j.version>2.19.0</log4j.version>
         <system-lambda.version>1.2.1</system-lambda.version>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.organization>carml</sonar.organization>
@@ -80,6 +80,11 @@
             <dependency>
                 <groupId>io.carml</groupId>
                 <artifactId>carml-logical-source-resolver-jsonpath</artifactId>
+                <version>${carml.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.carml</groupId>
+                <artifactId>carml-converters-jena</artifactId>
                 <version>${carml.version}</version>
             </dependency>
             <dependency>
@@ -212,7 +217,7 @@
                                             <limit>
                                                 <counter>INSTRUCTION</counter>
                                                 <value>COVEREDRATIO</value>
-                                                <minimum>0.8</minimum>
+                                                <minimum>0.7</minimum>
                                             </limit>
                                         </limits>
                                         <excludes />
@@ -228,7 +233,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>3.1.2</version>
+                    <version>3.2.0</version>
                     <executions>
                         <execution>
                             <id>validate</id>
@@ -249,14 +254,14 @@
                         <dependency>
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
-                            <version>10.3.2</version>
+                            <version>10.3.4</version>
                         </dependency>
                     </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.4.0</version>
+                    <version>3.4.1</version>
                     <configuration>
                         <failOnError>false</failOnError>
                     </configuration>
@@ -287,7 +292,7 @@
                 <plugin>
                     <groupId>com.diffplug.spotless</groupId>
                     <artifactId>spotless-maven-plugin</artifactId>
-                    <version>2.24.0</version>
+                    <version>2.27.2</version>
                     <configuration>
                         <java>
                             <eclipse>

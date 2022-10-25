@@ -13,6 +13,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>carml-output-jena</module>
         <module>carml-output-rdf4j</module>
     </modules>
 </project>

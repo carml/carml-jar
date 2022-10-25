@@ -27,11 +27,14 @@ Usage:  map [-hPVv] [-F=<outputRdfFormat>] [-o=<outputPath>]
   -f, --format=<mappingFileRdfFormat>
                   Mapping file RDF format:
                   ttl (text/turtle),
+                  ttls (application/x-turtlestar),
                   nt (application/n-triples),
                   nq (application/n-quads),
                   rdf (application/rdf+xml),
                   jsonld (application/ld+json),
+                  ndjsonld (application/x-ld+ndjson),
                   trig (application/trig),
+                  trigs (application/x-trigstar),
                   n3 (text/n3),
                   trix (application/trix),
                   brf (application/x-binary-rdf),
