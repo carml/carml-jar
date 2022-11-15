@@ -163,7 +163,7 @@ public class CarmlMapCommand implements Callable<Integer> {
   }
 
   private Flux<Statement> map(RdfRmlMapper rmlMapper) {
-    return rmlMapper.map();
+    return rmlMapper.map(System.in);
   }
 
   @SuppressWarnings("java:S106")

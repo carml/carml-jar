@@ -145,6 +145,29 @@ The following exit codes are returned on exit.
 * `1`: "failure" when running the command
 * `2`: command line usage error
 
+### Using `stdin`
+It is possible to map a data source provided via `stdin`. In this case the
+[CARML input stream exentsion](https://github.com/carml/carml#input-stream-extension) can be used.
+`stdin` is available as the default unnamed stream, and can be reference from a mapping as follows.
+
+```turtle
+@prefix carml: <http://carml.taxonic.com/carml/> .
+...
+
+:SomeLogicalSource
+  rml:source [
+    a carml:Stream ;
+  ];
+  ...
+.
+```
+
+This makes it possible to pipe input into a mapping process. For example:
+
+```console
+cat some/input | java -jar carml-jar-X.jar map -m rml/mapping.ttl
+```
+
 ## Building the project
 
 The project can be built by running:
