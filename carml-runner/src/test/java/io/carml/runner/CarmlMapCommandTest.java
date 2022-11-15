@@ -14,9 +14,11 @@ import static picocli.CommandLine.ExitCode.USAGE;
 
 import io.carml.runner.output.OutputHandler;
 import java.io.BufferedOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
+import org.apache.commons.io.IOUtils;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.util.ModelCollector;
 import org.junit.jupiter.api.Test;
@@ -58,6 +60,28 @@ class CarmlMapCommandTest {
     carmlRunner.run(args);
 
     // Then
+    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
+    var model = statementsCaptor.getValue()
+        .collect(new ModelCollector())
+        .block();
+    assertThat(model.size(), is(2));
+  }
+
+  @Test
+  void givenMappingAndSystemIn_whenMapCommandRun_thenReturnStreamingNqOutput() throws Exception {
+    // Given
+    var mapping = getStringForPath(TEST_PATH, "mapping", "mapping.inputstream.rml.ttl");
+    var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
+    var args = new String[] {"map", "-m", mapping};
+    var stdin = System.in;
+    var inputStream = IOUtils.toInputStream(String.format("id,make%n1,Toyota%n2,Mercedes"), StandardCharsets.UTF_8);
+    System.setIn(inputStream);
+
+    // When
+    carmlRunner.run(args);
+
+    // Then
+    System.setIn(stdin);
     verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
     var model = statementsCaptor.getValue()
         .collect(new ModelCollector())
