@@ -187,7 +187,7 @@ public class CarmlMapCommand implements Callable<Integer> {
       }
       LOG.info("Writing output to {} ...", outputPath);
       try (var outputStream = new BufferedOutputStream(Files.newOutputStream(outputPath))) {
-        return outputRdf(statements, rdfFormat, Map.of(), outputStream, pretty);
+        return outputRdf(statements, rdfFormat, namespaces, outputStream, pretty);
       } catch (IOException ioException) {
         throw new CarmlJarException(String.format("Error writing to output path %s", outputPath), ioException);
       }
