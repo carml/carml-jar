@@ -133,13 +133,16 @@ class CarmlMapCommandTest {
     var mapping = getStringForPath(TEST_PATH, "mapping", "mapping.rml.ttl");
     var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
     var outputFormat = "ttl";
-    var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-of", outputFormat, "-P"};
+    var prefixes = "schema=https://schema.org/";
+    var args =
+        new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-p", prefixes, "-of", outputFormat, "-P"};
 
     // When
     carmlRunner.run(args);
 
     // Then
-    verify(outputHandler).outputPretty(statementsCaptor.capture(), eq(ttl.name()), eq(Map.of()), eq(System.out));
+    verify(outputHandler).outputPretty(statementsCaptor.capture(), eq(ttl.name()),
+        eq(Map.of("schema", "https://schema.org/")), eq(System.out));
     var model = statementsCaptor.getValue()
         .collect(new ModelCollector())
         .block();
@@ -153,14 +156,15 @@ class CarmlMapCommandTest {
     var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
     var outputPath = tmpOutputDir.resolve("out.nq")
         .toString();
-    var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-o", outputPath};
+    var prefixes = "schema=https://schema.org/";
+    var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-p", prefixes, "-o", outputPath};
 
     // When
     carmlRunner.run(args);
 
     // Then
-    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()),
-        isA(BufferedOutputStream.class));
+    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()),
+        eq(Map.of("schema", "https://schema.org/")), isA(BufferedOutputStream.class));
     var model = statementsCaptor.getValue()
         .collect(new ModelCollector())
         .block();
