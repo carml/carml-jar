@@ -28,11 +28,11 @@ This project produces two artifacts:
 ### Map RDF file to output
 
 ```console
-Usage:  map [-hPVv] [-b=<baseIri>] [-F=<outputRdfFormat>] [-l=<limit>]
-            [-o=<outputPath>] [-M=<prefixMappings>]... [-p=<prefixDeclarations>
-            [,<prefixDeclarations>...]]... (-m=<mappingFiles>
-            [-m=<mappingFiles>]... [-f=<mappingFileRdfFormat>]
-            [-r=<relativeSourceLocation>])
+Usage:  map [-hVPv] [-F=<outputRdfFormat>] [-o=<outputPath>]
+            [-M=<prefixMappings>]... [-p=<prefixDeclarations>[,
+            <prefixDeclarations>...]]... [-b=<baseIri>] [-l=<limit>]
+            (-m=<mappingFiles> [-m=<mappingFiles>]...
+            [-f=<mappingFileRdfFormat>] [-r=<relativeSourceLocation>])
   -h, --help                 Show this help message and exit.
   -V, --version              Print version information and exit.
   -m, --mapping=<mappingFiles>
@@ -199,11 +199,11 @@ The CARML jar RDF4J artifact supports the same output formats (`-of`) that are s
 See the `map` help-description for details:
 
 ```console
-Usage:  map [-hPVv] [-b=<baseIri>] [-F=<outputRdfFormat>] [-l=<limit>]
-            [-o=<outputPath>] [-M=<prefixMappings>]... [-p=<prefixDeclarations>
-            [,<prefixDeclarations>...]]... (-m=<mappingFiles>
-            [-m=<mappingFiles>]... [-f=<mappingFileRdfFormat>]
-            [-r=<relativeSourceLocation>])
+Usage:  map [-hVPv] [-F=<outputRdfFormat>] [-o=<outputPath>]
+            [-M=<prefixMappings>]... [-p=<prefixDeclarations>[,
+            <prefixDeclarations>...]]... [-b=<baseIri>] [-l=<limit>]
+            (-m=<mappingFiles> [-m=<mappingFiles>]...
+            [-f=<mappingFileRdfFormat>] [-r=<relativeSourceLocation>])
   -h, --help                 Show this help message and exit.
   -V, --version              Print version information and exit.
   -m, --mapping=<mappingFiles>
@@ -276,11 +276,11 @@ output formats (`-of`) are those that [Jena supports](https://jena.apache.org/do
 See the `map` help-description for details:
 
 ```console
-Usage:  map [-hPVv] [-b=<baseIri>] [-F=<outputRdfFormat>] [-l=<limit>]
-            [-o=<outputPath>] [-M=<prefixMappings>]... [-p=<prefixDeclarations>
-            [,<prefixDeclarations>...]]... (-m=<mappingFiles>
-            [-m=<mappingFiles>]... [-f=<mappingFileRdfFormat>]
-            [-r=<relativeSourceLocation>])
+Usage:  map [-hVPv] [-F=<outputRdfFormat>] [-o=<outputPath>]
+            [-M=<prefixMappings>]... [-p=<prefixDeclarations>[,
+            <prefixDeclarations>...]]... [-b=<baseIri>] [-l=<limit>]
+            (-m=<mappingFiles> [-m=<mappingFiles>]...
+            [-f=<mappingFileRdfFormat>] [-r=<relativeSourceLocation>])
   -h, --help                 Show this help message and exit.
   -V, --version              Print version information and exit.
   -m, --mapping=<mappingFiles>
@@ -306,9 +306,9 @@ Usage:  map [-hPVv] [-b=<baseIri>] [-F=<outputRdfFormat>] [-l=<limit>]
                                specified in the mapping files.
   -F, -of, --outformat=<outputRdfFormat>
                              Output RDF format. Default: nq.
-                             Supported values are rt, nq, owl, rpb, n3, nt,
-                               jsonld, shaclc, trig, jsonld10, ttl, shc,
-                               jsonld11, rdf, xml, trdf, rj, pbrdf, trix
+                             Supported values are rt, nq, n3, rpb, owl, nt,
+                               jsonld, trig, shaclc, jsonld10, ttl, shc,
+                               jsonld11, rdf, trdf, xml, rj, pbrdf, trix
   -o, --output=<outputPath>  Output file path.
                              If path is directory, will default to fileName
                                `output`.

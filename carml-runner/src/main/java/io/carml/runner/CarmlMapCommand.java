@@ -47,7 +47,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
 @Component
-@Command(name = "map", sortOptions = false, mixinStandardHelpOptions = true)
+@Command(name = "map", sortOptions = false, sortSynopsis = false, mixinStandardHelpOptions = true)
 public class CarmlMapCommand implements Callable<Integer> {
 
   private static final Logger LOG = LogManager.getLogger();
