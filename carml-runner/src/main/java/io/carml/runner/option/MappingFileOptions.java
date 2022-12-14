@@ -7,6 +7,7 @@ import static io.carml.runner.option.OptionOrder.REL_SRC_LOC_ORDER;
 import io.carml.runner.format.RdfFormat;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import lombok.Getter;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
@@ -42,6 +43,6 @@ public class MappingFileOptions {
 
     @Option(names = {"-r", "-rsl", "--rel-src-loc"}, order = REL_SRC_LOC_ORDER,
         description = "Path from which to relatively find the sources specified in the mapping files.")
-    private Path relativeSourceLocation;
+    private Optional<Path> relativeSourceLocation;
   }
 }

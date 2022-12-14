@@ -26,7 +26,7 @@ public class OutputOptions {
       "Output file path.", //
       "If path is directory, will default to fileName `output`.", //
       "If left empty will output to console."})
-  private Path outputPath;
+  private Optional<Path> outputPath;
 
   @Option(names = {"-P", "--pretty"}, order = PRETTY_ORDER,
       description = "Serialize pretty printed output. (Caution: will cause in-memory output collection).")
