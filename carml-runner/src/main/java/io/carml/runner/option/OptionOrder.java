@@ -20,5 +20,7 @@ public final class OptionOrder {
 
   public static final int PRETTY_ORDER = 80;
 
-  public static final int VERBOSITY_ORDER = 90;
+  public static final int LIMIT_ORDER = 90;
+
+  public static final int VERBOSITY_ORDER = 100;
 }

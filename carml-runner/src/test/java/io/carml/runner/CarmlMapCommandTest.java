@@ -188,4 +188,23 @@ class CarmlMapCommandTest {
     // Then
     assertThat(exitCode, is(USAGE));
   }
+
+  @Test
+  void givenLimitArgs_whenMapCommandRun_thenReturnStreamingNqOutput() {
+    // Given
+    var mapping = getStringForPath(TEST_PATH, "mapping", "mapping.rml.ttl");
+    var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
+    var limit = "1";
+    var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-l", limit};
+
+    // When
+    carmlRunner.run(args);
+
+    // Then
+    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
+    var model = statementsCaptor.getValue()
+        .collect(new ModelCollector())
+        .block();
+    assertThat(model.size(), is(1));
+  }
 }
