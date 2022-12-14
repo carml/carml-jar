@@ -172,9 +172,13 @@ public class CarmlMapCommand implements Callable<Integer> {
     var rdfFormat = outputOptions.getOutputRdfFormat();
     var pretty = outputOptions.isPretty();
 
+    var outputStatements = outputOptions.getLimit()
+        .map(statements::take)
+        .orElse(statements);
+
     if (outputPath == null) {
       LOG.info("No output file specified. Outputting to console ...{}", System::lineSeparator);
-      return outputRdf(statements, rdfFormat, namespaces, System.out, pretty);
+      return outputRdf(outputStatements, rdfFormat, namespaces, System.out, pretty);
     } else {
       if (!Files.isDirectory(outputPath)) {
         try {
@@ -187,7 +191,7 @@ public class CarmlMapCommand implements Callable<Integer> {
       }
       LOG.info("Writing output to {} ...", outputPath);
       try (var outputStream = new BufferedOutputStream(Files.newOutputStream(outputPath))) {
-        return outputRdf(statements, rdfFormat, namespaces, outputStream, pretty);
+        return outputRdf(outputStatements, rdfFormat, namespaces, outputStream, pretty);
       } catch (IOException ioException) {
         throw new CarmlJarException(String.format("Error writing to output path %s", outputPath), ioException);
       }
