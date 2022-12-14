@@ -144,6 +144,9 @@ public class CarmlMapCommand implements Callable<Integer> {
       mapperBuilder.fileResolver(relativeSourceLocation);
     }
 
+    outputOptions.getBaseIri()
+        .ifPresent(mapperBuilder::baseIri);
+
     return mapperBuilder.build();
   }
 

@@ -7,6 +7,8 @@ import static io.carml.runner.format.RdfFormat.nq;
 import static io.carml.runner.format.RdfFormat.ttl;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.verify;
@@ -21,6 +23,7 @@ import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.util.ModelCollector;
+import org.eclipse.rdf4j.model.util.Models;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
@@ -190,7 +193,7 @@ class CarmlMapCommandTest {
   }
 
   @Test
-  void givenLimitArgs_whenMapCommandRun_thenReturnStreamingNqOutput() {
+  void givenLimitArg_whenMapCommandRun_thenReturnLimitedOutput() {
     // Given
     var mapping = getStringForPath(TEST_PATH, "mapping", "mapping.rml.ttl");
     var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
@@ -206,5 +209,27 @@ class CarmlMapCommandTest {
         .collect(new ModelCollector())
         .block();
     assertThat(model.size(), is(1));
+  }
+
+  @Test
+  void givenBaseIriArg_whenMapCommandRun_thenReturnOutputWithBaseIri() {
+    // Given
+    var mapping = getStringForPath(TEST_PATH, "mapping", "mapping.rml.ttl");
+    var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
+    var baseIri = "https://foo.bar/";
+    var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-b", baseIri};
+
+    // When
+    carmlRunner.run(args);
+
+    // Then
+    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
+    var model = statementsCaptor.getValue()
+        .collect(new ModelCollector())
+        .block();
+    assertThat(model.size(), is(2));
+    Models.subject(model)
+        .ifPresentOrElse(subject -> assertThat(subject.stringValue(), startsWith(baseIri)),
+            () -> fail("Expected subject but non found."));
   }
 }
