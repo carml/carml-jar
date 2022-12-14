@@ -47,7 +47,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
 @Component
-@Command(name = "map", sortOptions = false, mixinStandardHelpOptions = true)
+@Command(name = "map", sortOptions = false, sortSynopsis = false, mixinStandardHelpOptions = true)
 public class CarmlMapCommand implements Callable<Integer> {
 
   private static final Logger LOG = LogManager.getLogger();
@@ -139,10 +139,11 @@ public class CarmlMapCommand implements Callable<Integer> {
 
     var relativeSourceLocation = mappingFileOptions.getGroup()
         .getRelativeSourceLocation();
-    if (relativeSourceLocation != null) {
-      LOG.debug("Setting relative source location {} ...", () -> relativeSourceLocation);
-      mapperBuilder.fileResolver(relativeSourceLocation);
-    }
+
+    relativeSourceLocation.ifPresent(location -> {
+      LOG.debug("Setting relative source location {} ...", () -> location);
+      mapperBuilder.fileResolver(location);
+    });
 
     outputOptions.getBaseIri()
         .ifPresent(mapperBuilder::baseIri);
@@ -169,9 +170,8 @@ public class CarmlMapCommand implements Callable<Integer> {
     return rmlMapper.map(System.in);
   }
 
-  @SuppressWarnings("java:S106")
+
   private long handleOutput(Flux<Statement> statements) {
-    var outputPath = outputOptions.getOutputPath();
     var rdfFormat = outputOptions.getOutputRdfFormat();
     var pretty = outputOptions.isPretty();
 
@@ -179,26 +179,33 @@ public class CarmlMapCommand implements Callable<Integer> {
         .map(statements::take)
         .orElse(statements);
 
-    if (outputPath == null) {
-      LOG.info("No output file specified. Outputting to console ...{}", System::lineSeparator);
-      return outputRdf(outputStatements, rdfFormat, namespaces, System.out, pretty);
-    } else {
-      if (!Files.isDirectory(outputPath)) {
-        try {
-          Files.createDirectories(outputPath.getParent());
-        } catch (IOException ioException) {
-          throw new CarmlJarException(String.format("Error creating directory %s", outputPath), ioException);
-        }
-      } else {
-        outputPath = outputPath.resolve("output");
-      }
-      LOG.info("Writing output to {} ...", outputPath);
-      try (var outputStream = new BufferedOutputStream(Files.newOutputStream(outputPath))) {
-        return outputRdf(outputStatements, rdfFormat, namespaces, outputStream, pretty);
+    return outputOptions.getOutputPath()
+        .map(outputPath -> outputWithPath(outputPath, outputStatements, rdfFormat, pretty))
+        .orElse(outputWithoutPath(outputStatements, rdfFormat, pretty));
+  }
+
+  private long outputWithPath(Path outputPath, Flux<Statement> statements, String rdfFormat, boolean pretty) {
+    if (!Files.isDirectory(outputPath)) {
+      try {
+        Files.createDirectories(outputPath.getParent());
       } catch (IOException ioException) {
-        throw new CarmlJarException(String.format("Error writing to output path %s", outputPath), ioException);
+        throw new CarmlJarException(String.format("Error creating directory %s", outputPath), ioException);
       }
+    } else {
+      outputPath = outputPath.resolve("output");
     }
+    LOG.info("Writing output to {} ...", outputPath);
+    try (var outputStream = new BufferedOutputStream(Files.newOutputStream(outputPath))) {
+      return outputRdf(statements, rdfFormat, namespaces, outputStream, pretty);
+    } catch (IOException ioException) {
+      throw new CarmlJarException(String.format("Error writing to output path %s", outputPath), ioException);
+    }
+  }
+
+  @SuppressWarnings("java:S106")
+  private long outputWithoutPath(Flux<Statement> statements, String rdfFormat, boolean pretty) {
+    LOG.info("No output file specified. Outputting to console ...{}", System::lineSeparator);
+    return outputRdf(statements, rdfFormat, namespaces, System.out, pretty);
   }
 
   private long outputRdf(Flux<Statement> statements, String rdfFormat, Map<String, String> namespaces,

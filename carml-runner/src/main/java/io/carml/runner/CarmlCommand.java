@@ -7,7 +7,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 
 @Component
-@Command(name = "", mixinStandardHelpOptions = true, sortOptions = false)
+@Command(name = "", mixinStandardHelpOptions = true, sortOptions = false, sortSynopsis = false)
 public class CarmlCommand {
 
   @Getter

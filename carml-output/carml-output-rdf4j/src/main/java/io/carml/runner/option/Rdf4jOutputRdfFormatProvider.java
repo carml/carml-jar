@@ -17,6 +17,7 @@ public class Rdf4jOutputRdfFormatProvider {
         .getKeys()
         .stream()
         .map(RDFFormat::getDefaultFileExtension)
+        .sorted()
         .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 }

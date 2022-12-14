@@ -1,5 +1,6 @@
 package io.carml.runner.option;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -17,6 +18,7 @@ public class JenaOutputRdfFormatProvider {
         .stream()
         .map(Lang::getFileExtensions)
         .flatMap(List::stream)
-        .collect(Collectors.toSet());
+        .sorted()
+        .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 }
