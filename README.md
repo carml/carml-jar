@@ -8,7 +8,20 @@
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=carml_carml-jar&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=carml_carml-jar)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=carml_carml-jar&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=carml_carml-jar)
 
-> Project status: WIP
+## Table of contents
+
+- [Introduction](#introduction)
+- [Usage](#usage)
+- [CARML jar RDF4J](#carml-jar-rdf4j-output)
+- [CARML jar Jena](#carml-jar-jena-output)
+- [Building the project](#building-the-project)
+
+## Introduction
+CARML jar is a CLI application for executing RML mappings with [CARML](https://github.com/carml/carml).
+
+This project produces two artifacts:
+* CARML jar RDF4J - which outputs RDF using [RDF4J](https://rdf4j.org/)
+* CARML jar Jena - which outputs RDF using [Apache Jena](https://jena.apache.org/)
 
 ## Usage
 
@@ -72,9 +85,11 @@ Usage:  map [-hPVv] [-F=<outputRdfFormat>] [-o=<outputPath>]
                   For example `-v -v`, or `-vv` or `--verbose --verbose`
 ```
 
-For example:
+For example, the following command:
 
-The following command:
+```console
+java -jar carml-jar-X.jar map -m rml -rsl input -of ttl -P
+```
 
 * maps (`map`) all mapping files
 * under the 'rml' directory (`-m rml`)
@@ -82,10 +97,6 @@ The following command:
 * with output format Turtle (`-of ttl`)
 * pretty printed (`-P`)
 * to stdout.
-
-```console
-java -jar carml-jar-X.jar map -m rml -rsl input -of ttl -P
-```
 
 #### Output
 
@@ -101,12 +112,14 @@ Errors logs are output to `stderr`.
 
 ##### Namespace Prefixes
 
-To generate output with prefixed IRIs namespace prefixes can be specified via `-p`.
+To generate output with prefixed IRIs, namespace prefixes can be specified via `-p`.
 The prefix definition can be provided inline by using the format `prefix=iri`. For example:
 
 ```console
 -p ex=http://example.org/
 ```
+
+Multiple prefix definitions can be separated by comma's.
 
 The prefix can also reference a prefix defined in a prefix mapping document provided via `-pm`. For example:
 
@@ -147,7 +160,7 @@ The following exit codes are returned on exit.
 
 ### Using `stdin`
 It is possible to map a data source provided via `stdin`. In this case the
-[CARML input stream exentsion](https://github.com/carml/carml#input-stream-extension) can be used.
+[CARML input stream extension](https://github.com/carml/carml#input-stream-extension) can be used.
 `stdin` is available as the default unnamed stream, and can be reference from a mapping as follows.
 
 ```turtle
@@ -168,6 +181,137 @@ This makes it possible to pipe input into a mapping process. For example:
 cat some/input | java -jar carml-jar-X.jar map -m rml/mapping.ttl
 ```
 
+## CARML jar RDF4J output
+The CARML jar RDF4J artifact supports the same output formats (`-of`) that are supported for the mapping file format
+(`-f`).
+
+See the `map` help-description for details:
+
+```console
+Usage:  map [-hPVv] [-F=<outputRdfFormat>] [-o=<outputPath>]
+            [-M=<prefixMappings>]... [-p=<prefixDeclarations>[,
+            <prefixDeclarations>...]]... (-m=<mappingFiles>
+            [-m=<mappingFiles>]... [-f=<mappingFileRdfFormat>]
+            [-r=<relativeSourceLocation>])
+  -h, --help      Show this help message and exit.
+  -V, --version   Print version information and exit.
+  -m, --mapping=<mappingFiles>
+                  Mapping file path(s) and/or mapping file directory path(s).
+  -f, --format=<mappingFileRdfFormat>
+                  Mapping file RDF format:
+                  ttl (text/turtle),
+                  ttls (application/x-turtlestar),
+                  nt (application/n-triples),
+                  nq (application/n-quads),
+                  rdf (application/rdf+xml),
+                  jsonld (application/ld+json),
+                  ndjsonld (application/x-ld+ndjson),
+                  trig (application/trig),
+                  trigs (application/x-trigstar),
+                  n3 (text/n3),
+                  trix (application/trix),
+                  brf (application/x-binary-rdf),
+                  rj (application/rdf+json).
+  -r, -rsl, --rel-src-loc=<relativeSourceLocation>
+                  Path from which to relatively find the sources specified in
+                    the mapping files.
+  -F, -of, --outformat=<outputRdfFormat>
+                  Output RDF format. Default: nq.
+                  Supported values are nt, rdf, ttl, n3, rj, trig, trigs, nq,
+                    brf, ndjsonld, xml, ttls, jsonld
+  -o, --output=<outputPath>
+                  Output file path.
+                  If path is directory, will default to fileName `output`.
+                  If left empty will output to console.
+  -M, -pm, --prefix-mapping=<prefixMappings>
+                  File or directory path(s) containing prefix mappings.
+                  Files must be JSON or YAML files containing a map of prefix
+                    declarations.
+                  File names must have either .json or .yaml/.yml file
+                    extensions.
+  -p, --prefixes=<prefixDeclarations>[,<prefixDeclarations>...]
+                  Declares which prefixes to apply to the output.
+                  Can be a prefix reference or an inline prefix declaration.
+                  A prefix reference will be resolved against the provided
+                    prefix mapping (`-pm`), or the default prefix mapping.
+                  An inline prefix declaration can be provided as 'prefix=iri.
+                    For example: ex=http://example.com/'
+                  Multiple declarations can be separated by ','. For example:
+                    ex=http://example.com/,foo,bar
+  -P, --pretty    Serialize pretty printed output. (Caution: will cause
+                    in-memory output collection).
+  -v, --verbose   Specify multiple -v or --verbose options to increase
+                    verbosity.
+                  For example `-v -v`, or `-vv` or `--verbose --verbose`
+```
+
+## CARML jar Jena output
+
+The CARML jar Jena artifact transforms the output to Jena datastructures and uses Jena to generate the output.
+This transformation has negligible performance impact and, since Jena is used as the output handler, the available
+output formats (`-of`) are those that [Jena supports](https://jena.apache.org/documentation/io/#formats).
+
+See the `map` help-description for details:
+
+```console
+Usage:  map [-hPVv] [-F=<outputRdfFormat>] [-o=<outputPath>]
+            [-M=<prefixMappings>]... [-p=<prefixDeclarations>[,
+            <prefixDeclarations>...]]... (-m=<mappingFiles>
+            [-m=<mappingFiles>]... [-f=<mappingFileRdfFormat>]
+            [-r=<relativeSourceLocation>])
+  -h, --help      Show this help message and exit.
+  -V, --version   Print version information and exit.
+  -m, --mapping=<mappingFiles>
+                  Mapping file path(s) and/or mapping file directory path(s).
+  -f, --format=<mappingFileRdfFormat>
+                  Mapping file RDF format:
+                  ttl (text/turtle),
+                  ttls (application/x-turtlestar),
+                  nt (application/n-triples),
+                  nq (application/n-quads),
+                  rdf (application/rdf+xml),
+                  jsonld (application/ld+json),
+                  ndjsonld (application/x-ld+ndjson),
+                  trig (application/trig),
+                  trigs (application/x-trigstar),
+                  n3 (text/n3),
+                  trix (application/trix),
+                  brf (application/x-binary-rdf),
+                  rj (application/rdf+json).
+  -r, -rsl, --rel-src-loc=<relativeSourceLocation>
+                  Path from which to relatively find the sources specified in
+                    the mapping files.
+  -F, -of, --outformat=<outputRdfFormat>
+                  Output RDF format. Default: nq.
+                  Supported values are rt, nq, owl, rpb, n3, nt, shaclc, trig,
+                    jsonld, jsonld10, ttl, shc, jsonld11, rdf, xml, trdf, rj,
+                    pbrdf, trix
+  -o, --output=<outputPath>
+                  Output file path.
+                  If path is directory, will default to fileName `output`.
+                  If left empty will output to console.
+  -M, -pm, --prefix-mapping=<prefixMappings>
+                  File or directory path(s) containing prefix mappings.
+                  Files must be JSON or YAML files containing a map of prefix
+                    declarations.
+                  File names must have either .json or .yaml/.yml file
+                    extensions.
+  -p, --prefixes=<prefixDeclarations>[,<prefixDeclarations>...]
+                  Declares which prefixes to apply to the output.
+                  Can be a prefix reference or an inline prefix declaration.
+                  A prefix reference will be resolved against the provided
+                    prefix mapping (`-pm`), or the default prefix mapping.
+                  An inline prefix declaration can be provided as 'prefix=iri.
+                    For example: ex=http://example.com/'
+                  Multiple declarations can be separated by ','. For example:
+                    ex=http://example.com/,foo,bar
+  -P, --pretty    Serialize pretty printed output. (Caution: will cause
+                    in-memory output collection).
+  -v, --verbose   Specify multiple -v or --verbose options to increase
+                    verbosity.
+                  For example `-v -v`, or `-vv` or `--verbose --verbose`
+```
+
 ## Building the project
 
 The project can be built by running:
@@ -176,4 +320,4 @@ The project can be built by running:
 mvn clean package
 ```
 
-The runnable jar will be generated in the `/carml-app/target` dir.
+The runnable jars will be generated in the `/carml-app/*/target` dirs.

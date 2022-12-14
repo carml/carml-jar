@@ -11,30 +11,10 @@
     </parent>
 
     <artifactId>carml-app</artifactId>
+    <packaging>pom</packaging>
 
-    <dependencies>
-        <dependency>
-            <groupId>io.carml</groupId>
-            <artifactId>carml-runner</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.carml</groupId>
-            <artifactId>carml-output-rdf4j</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <finalName>${project.parent.artifactId}-${project.version}-${carml.version}</finalName>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <mainClass>io.carml.CarmlJarApplication</mainClass>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+    <modules>
+        <module>carml-app-rdf4j</module>
+        <module>carml-app-jena</module>
+    </modules>
 </project>
