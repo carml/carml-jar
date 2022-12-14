@@ -28,66 +28,72 @@ This project produces two artifacts:
 ### Map RDF file to output
 
 ```console
-Usage:  map [-hPVv] [-F=<outputRdfFormat>] [-l=<limit>] [-o=<outputPath>]
-            [-M=<prefixMappings>]... [-p=<prefixDeclarations>[,
-            <prefixDeclarations>...]]... (-m=<mappingFiles>
+Usage:  map [-hPVv] [-b=<baseIri>] [-F=<outputRdfFormat>] [-l=<limit>]
+            [-o=<outputPath>] [-M=<prefixMappings>]... [-p=<prefixDeclarations>
+            [,<prefixDeclarations>...]]... (-m=<mappingFiles>
             [-m=<mappingFiles>]... [-f=<mappingFileRdfFormat>]
             [-r=<relativeSourceLocation>])
-  -h, --help            Show this help message and exit.
-  -V, --version         Print version information and exit.
+  -h, --help                 Show this help message and exit.
+  -V, --version              Print version information and exit.
   -m, --mapping=<mappingFiles>
-                        Mapping file path(s) and/or mapping file directory path
-                          (s).
+                             Mapping file path(s) and/or mapping file directory
+                               path(s).
   -f, --format=<mappingFileRdfFormat>
-                        Mapping file RDF format:
-                        ttl (text/turtle),
-                        ttls (application/x-turtlestar),
-                        nt (application/n-triples),
-                        nq (application/n-quads),
-                        rdf (application/rdf+xml),
-                        jsonld (application/ld+json),
-                        ndjsonld (application/x-ld+ndjson),
-                        trig (application/trig),
-                        trigs (application/x-trigstar),
-                        n3 (text/n3),
-                        trix (application/trix),
-                        brf (application/x-binary-rdf),
-                        rj (application/rdf+json).
+                             Mapping file RDF format:
+                             ttl (text/turtle),
+                             ttls (application/x-turtlestar),
+                             nt (application/n-triples),
+                             nq (application/n-quads),
+                             rdf (application/rdf+xml),
+                             jsonld (application/ld+json),
+                             ndjsonld (application/x-ld+ndjson),
+                             trig (application/trig),
+                             trigs (application/x-trigstar),
+                             n3 (text/n3),
+                             trix (application/trix),
+                             brf (application/x-binary-rdf),
+                             rj (application/rdf+json).
   -r, -rsl, --rel-src-loc=<relativeSourceLocation>
-                        Path from which to relatively find the sources
-                          specified in the mapping files.
+                             Path from which to relatively find the sources
+                               specified in the mapping files.
   -F, -of, --outformat=<outputRdfFormat>
-                        Output RDF format. Default: nq.
-                        Supported values are nt, rdf, ttl, n3, rj, trig, trigs,
-                          nq, brf, ndjsonld, xml, ttls, jsonld
-  -o, --output=<outputPath>
-                        Output file path.
-                        If path is directory, will default to fileName `output`.
-                        If left empty will output to console.
+                             Output RDF format. Default: nq.
+                             Supported values are nt, rdf, ttl, n3, rj, trig,
+                               trigs, nq, brf, ndjsonld, xml, ttls, jsonld
+  -o, --output=<outputPath>  Output file path.
+                             If path is directory, will default to fileName
+                               `output`.
+                             If left empty will output to console.
   -M, -pm, --prefix-mapping=<prefixMappings>
-                        File or directory path(s) containing prefix mappings.
-                        Files must be JSON or YAML files containing a map of
-                          prefix declarations.
-                        File names must have either .json or .yaml/.yml file
-                          extensions.
+                             File or directory path(s) containing prefix
+                               mappings.
+                             Files must be JSON or YAML files containing a map
+                               of prefix declarations.
+                             File names must have either .json or .yaml/.yml
+                               file extensions.
   -p, --prefixes=<prefixDeclarations>[,<prefixDeclarations>...]
-                        Declares which prefixes to apply to the output.
-                        Can be a prefix reference or an inline prefix
-                          declaration.
-                        A prefix reference will be resolved against the
-                          provided prefix mapping (`-pm`), or the default
-                          prefix mapping.
-                        An inline prefix declaration can be provided as
-                          'prefix=iri. For example: ex=http://example.com/'
-                        Multiple declarations can be separated by ','. For
-                          example: ex=http://example.com/,foo,bar
-  -P, --pretty          Serialize pretty printed output. (Caution: will cause
-                          in-memory output collection).
-  -l, --limit=<limit>   Limit the number of statements generated by the amount
-                          provided.
-  -v, --verbose         Specify multiple -v or --verbose options to increase
-                          verbosity.
-                        For example `-v -v`, or `-vv` or `--verbose --verbose`
+                             Declares which prefixes to apply to the output.
+                             Can be a prefix reference or an inline prefix
+                               declaration.
+                             A prefix reference will be resolved against the
+                               provided prefix mapping (`-pm`), or the default
+                               prefix mapping.
+                             An inline prefix declaration can be provided as
+                               'prefix=iri. For example: ex=http://example.com/'
+                             Multiple declarations can be separated by ','. For
+                               example: ex=http://example.com/,foo,bar
+  -P, --pretty               Serialize pretty printed output. (Caution: will
+                               cause in-memory output collection).
+  -b, --base-iri=<baseIri>   Base IRI to use to expand relative IRIs in the
+                               generated output.
+                             If not specified the default `http://example.
+                               com/base/` is used.
+  -l, --limit=<limit>        Limit the number of statements generated by the
+                               amount provided.
+  -v, --verbose              Specify multiple -v or --verbose options to
+                               increase verbosity.
+                             For example `-v -v`, or `-vv` or `--verbose
+                               --verbose`
 ```
 
 For example, the following command:
@@ -193,66 +199,72 @@ The CARML jar RDF4J artifact supports the same output formats (`-of`) that are s
 See the `map` help-description for details:
 
 ```console
-Usage:  map [-hPVv] [-F=<outputRdfFormat>] [-l=<limit>] [-o=<outputPath>]
-            [-M=<prefixMappings>]... [-p=<prefixDeclarations>[,
-            <prefixDeclarations>...]]... (-m=<mappingFiles>
+Usage:  map [-hPVv] [-b=<baseIri>] [-F=<outputRdfFormat>] [-l=<limit>]
+            [-o=<outputPath>] [-M=<prefixMappings>]... [-p=<prefixDeclarations>
+            [,<prefixDeclarations>...]]... (-m=<mappingFiles>
             [-m=<mappingFiles>]... [-f=<mappingFileRdfFormat>]
             [-r=<relativeSourceLocation>])
-  -h, --help            Show this help message and exit.
-  -V, --version         Print version information and exit.
+  -h, --help                 Show this help message and exit.
+  -V, --version              Print version information and exit.
   -m, --mapping=<mappingFiles>
-                        Mapping file path(s) and/or mapping file directory path
-                          (s).
+                             Mapping file path(s) and/or mapping file directory
+                               path(s).
   -f, --format=<mappingFileRdfFormat>
-                        Mapping file RDF format:
-                        ttl (text/turtle),
-                        ttls (application/x-turtlestar),
-                        nt (application/n-triples),
-                        nq (application/n-quads),
-                        rdf (application/rdf+xml),
-                        jsonld (application/ld+json),
-                        ndjsonld (application/x-ld+ndjson),
-                        trig (application/trig),
-                        trigs (application/x-trigstar),
-                        n3 (text/n3),
-                        trix (application/trix),
-                        brf (application/x-binary-rdf),
-                        rj (application/rdf+json).
+                             Mapping file RDF format:
+                             ttl (text/turtle),
+                             ttls (application/x-turtlestar),
+                             nt (application/n-triples),
+                             nq (application/n-quads),
+                             rdf (application/rdf+xml),
+                             jsonld (application/ld+json),
+                             ndjsonld (application/x-ld+ndjson),
+                             trig (application/trig),
+                             trigs (application/x-trigstar),
+                             n3 (text/n3),
+                             trix (application/trix),
+                             brf (application/x-binary-rdf),
+                             rj (application/rdf+json).
   -r, -rsl, --rel-src-loc=<relativeSourceLocation>
-                        Path from which to relatively find the sources
-                          specified in the mapping files.
+                             Path from which to relatively find the sources
+                               specified in the mapping files.
   -F, -of, --outformat=<outputRdfFormat>
-                        Output RDF format. Default: nq.
-                        Supported values are nt, rdf, ttl, n3, rj, trig, trigs,
-                          nq, brf, ndjsonld, xml, ttls, jsonld
-  -o, --output=<outputPath>
-                        Output file path.
-                        If path is directory, will default to fileName `output`.
-                        If left empty will output to console.
+                             Output RDF format. Default: nq.
+                             Supported values are nt, rdf, ttl, n3, rj, trig,
+                               trigs, nq, brf, ndjsonld, xml, ttls, jsonld
+  -o, --output=<outputPath>  Output file path.
+                             If path is directory, will default to fileName
+                               `output`.
+                             If left empty will output to console.
   -M, -pm, --prefix-mapping=<prefixMappings>
-                        File or directory path(s) containing prefix mappings.
-                        Files must be JSON or YAML files containing a map of
-                          prefix declarations.
-                        File names must have either .json or .yaml/.yml file
-                          extensions.
+                             File or directory path(s) containing prefix
+                               mappings.
+                             Files must be JSON or YAML files containing a map
+                               of prefix declarations.
+                             File names must have either .json or .yaml/.yml
+                               file extensions.
   -p, --prefixes=<prefixDeclarations>[,<prefixDeclarations>...]
-                        Declares which prefixes to apply to the output.
-                        Can be a prefix reference or an inline prefix
-                          declaration.
-                        A prefix reference will be resolved against the
-                          provided prefix mapping (`-pm`), or the default
-                          prefix mapping.
-                        An inline prefix declaration can be provided as
-                          'prefix=iri. For example: ex=http://example.com/'
-                        Multiple declarations can be separated by ','. For
-                          example: ex=http://example.com/,foo,bar
-  -P, --pretty          Serialize pretty printed output. (Caution: will cause
-                          in-memory output collection).
-  -l, --limit=<limit>   Limit the number of statements generated by the amount
-                          provided.
-  -v, --verbose         Specify multiple -v or --verbose options to increase
-                          verbosity.
-                        For example `-v -v`, or `-vv` or `--verbose --verbose`
+                             Declares which prefixes to apply to the output.
+                             Can be a prefix reference or an inline prefix
+                               declaration.
+                             A prefix reference will be resolved against the
+                               provided prefix mapping (`-pm`), or the default
+                               prefix mapping.
+                             An inline prefix declaration can be provided as
+                               'prefix=iri. For example: ex=http://example.com/'
+                             Multiple declarations can be separated by ','. For
+                               example: ex=http://example.com/,foo,bar
+  -P, --pretty               Serialize pretty printed output. (Caution: will
+                               cause in-memory output collection).
+  -b, --base-iri=<baseIri>   Base IRI to use to expand relative IRIs in the
+                               generated output.
+                             If not specified the default `http://example.
+                               com/base/` is used.
+  -l, --limit=<limit>        Limit the number of statements generated by the
+                               amount provided.
+  -v, --verbose              Specify multiple -v or --verbose options to
+                               increase verbosity.
+                             For example `-v -v`, or `-vv` or `--verbose
+                               --verbose`
 ```
 
 ## CARML jar Jena output
@@ -264,67 +276,73 @@ output formats (`-of`) are those that [Jena supports](https://jena.apache.org/do
 See the `map` help-description for details:
 
 ```console
-Usage:  map [-hPVv] [-F=<outputRdfFormat>] [-l=<limit>] [-o=<outputPath>]
-            [-M=<prefixMappings>]... [-p=<prefixDeclarations>[,
-            <prefixDeclarations>...]]... (-m=<mappingFiles>
+Usage:  map [-hPVv] [-b=<baseIri>] [-F=<outputRdfFormat>] [-l=<limit>]
+            [-o=<outputPath>] [-M=<prefixMappings>]... [-p=<prefixDeclarations>
+            [,<prefixDeclarations>...]]... (-m=<mappingFiles>
             [-m=<mappingFiles>]... [-f=<mappingFileRdfFormat>]
             [-r=<relativeSourceLocation>])
-  -h, --help            Show this help message and exit.
-  -V, --version         Print version information and exit.
+  -h, --help                 Show this help message and exit.
+  -V, --version              Print version information and exit.
   -m, --mapping=<mappingFiles>
-                        Mapping file path(s) and/or mapping file directory path
-                          (s).
+                             Mapping file path(s) and/or mapping file directory
+                               path(s).
   -f, --format=<mappingFileRdfFormat>
-                        Mapping file RDF format:
-                        ttl (text/turtle),
-                        ttls (application/x-turtlestar),
-                        nt (application/n-triples),
-                        nq (application/n-quads),
-                        rdf (application/rdf+xml),
-                        jsonld (application/ld+json),
-                        ndjsonld (application/x-ld+ndjson),
-                        trig (application/trig),
-                        trigs (application/x-trigstar),
-                        n3 (text/n3),
-                        trix (application/trix),
-                        brf (application/x-binary-rdf),
-                        rj (application/rdf+json).
+                             Mapping file RDF format:
+                             ttl (text/turtle),
+                             ttls (application/x-turtlestar),
+                             nt (application/n-triples),
+                             nq (application/n-quads),
+                             rdf (application/rdf+xml),
+                             jsonld (application/ld+json),
+                             ndjsonld (application/x-ld+ndjson),
+                             trig (application/trig),
+                             trigs (application/x-trigstar),
+                             n3 (text/n3),
+                             trix (application/trix),
+                             brf (application/x-binary-rdf),
+                             rj (application/rdf+json).
   -r, -rsl, --rel-src-loc=<relativeSourceLocation>
-                        Path from which to relatively find the sources
-                          specified in the mapping files.
+                             Path from which to relatively find the sources
+                               specified in the mapping files.
   -F, -of, --outformat=<outputRdfFormat>
-                        Output RDF format. Default: nq.
-                        Supported values are rt, nq, n3, owl, rpb, nt, jsonld,
-                          shaclc, trig, jsonld10, ttl, shc, jsonld11, rdf, xml,
-                          trdf, rj, pbrdf, trix
-  -o, --output=<outputPath>
-                        Output file path.
-                        If path is directory, will default to fileName `output`.
-                        If left empty will output to console.
+                             Output RDF format. Default: nq.
+                             Supported values are rt, nq, owl, rpb, n3, nt,
+                               jsonld, shaclc, trig, jsonld10, ttl, shc,
+                               jsonld11, rdf, xml, trdf, rj, pbrdf, trix
+  -o, --output=<outputPath>  Output file path.
+                             If path is directory, will default to fileName
+                               `output`.
+                             If left empty will output to console.
   -M, -pm, --prefix-mapping=<prefixMappings>
-                        File or directory path(s) containing prefix mappings.
-                        Files must be JSON or YAML files containing a map of
-                          prefix declarations.
-                        File names must have either .json or .yaml/.yml file
-                          extensions.
+                             File or directory path(s) containing prefix
+                               mappings.
+                             Files must be JSON or YAML files containing a map
+                               of prefix declarations.
+                             File names must have either .json or .yaml/.yml
+                               file extensions.
   -p, --prefixes=<prefixDeclarations>[,<prefixDeclarations>...]
-                        Declares which prefixes to apply to the output.
-                        Can be a prefix reference or an inline prefix
-                          declaration.
-                        A prefix reference will be resolved against the
-                          provided prefix mapping (`-pm`), or the default
-                          prefix mapping.
-                        An inline prefix declaration can be provided as
-                          'prefix=iri. For example: ex=http://example.com/'
-                        Multiple declarations can be separated by ','. For
-                          example: ex=http://example.com/,foo,bar
-  -P, --pretty          Serialize pretty printed output. (Caution: will cause
-                          in-memory output collection).
-  -l, --limit=<limit>   Limit the number of statements generated by the amount
-                          provided.
-  -v, --verbose         Specify multiple -v or --verbose options to increase
-                          verbosity.
-                        For example `-v -v`, or `-vv` or `--verbose --verbose`
+                             Declares which prefixes to apply to the output.
+                             Can be a prefix reference or an inline prefix
+                               declaration.
+                             A prefix reference will be resolved against the
+                               provided prefix mapping (`-pm`), or the default
+                               prefix mapping.
+                             An inline prefix declaration can be provided as
+                               'prefix=iri. For example: ex=http://example.com/'
+                             Multiple declarations can be separated by ','. For
+                               example: ex=http://example.com/,foo,bar
+  -P, --pretty               Serialize pretty printed output. (Caution: will
+                               cause in-memory output collection).
+  -b, --base-iri=<baseIri>   Base IRI to use to expand relative IRIs in the
+                               generated output.
+                             If not specified the default `http://example.
+                               com/base/` is used.
+  -l, --limit=<limit>        Limit the number of statements generated by the
+                               amount provided.
+  -v, --verbose              Specify multiple -v or --verbose options to
+                               increase verbosity.
+                             For example `-v -v`, or `-vv` or `--verbose
+                               --verbose`
 ```
 
 ## Building the project

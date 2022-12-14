@@ -12,7 +12,7 @@
     rml:referenceFormulation ql:XPath ;
   ] ;
   rr:subjectMap [
-    rr:template "http://example.org/bus/{@id}" ;
+    rr:template "{@id}" ;
     rr:class ex:Bus ;
   ] ;
 .
