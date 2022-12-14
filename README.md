@@ -58,8 +58,8 @@ Usage:  map [-hVPv] [-F=<outputRdfFormat>] [-o=<outputPath>]
                                specified in the mapping files.
   -F, -of, --outformat=<outputRdfFormat>
                              Output RDF format. Default: nq.
-                             Supported values are nt, rdf, ttl, n3, rj, trig,
-                               trigs, nq, brf, ndjsonld, xml, ttls, jsonld
+                             Supported values are brf, jsonld, n3, ndjsonld,
+                               nq, nt, rdf, rj, trig, trigs, ttl, ttls, xml
   -o, --output=<outputPath>  Output file path.
                              If path is directory, will default to fileName
                                `output`.
@@ -229,8 +229,8 @@ Usage:  map [-hVPv] [-F=<outputRdfFormat>] [-o=<outputPath>]
                                specified in the mapping files.
   -F, -of, --outformat=<outputRdfFormat>
                              Output RDF format. Default: nq.
-                             Supported values are nt, rdf, ttl, n3, rj, trig,
-                               trigs, nq, brf, ndjsonld, xml, ttls, jsonld
+                             Supported values are brf, jsonld, n3, ndjsonld,
+                               nq, nt, rdf, rj, trig, trigs, ttl, ttls, xml
   -o, --output=<outputPath>  Output file path.
                              If path is directory, will default to fileName
                                `output`.
@@ -306,9 +306,9 @@ Usage:  map [-hVPv] [-F=<outputRdfFormat>] [-o=<outputPath>]
                                specified in the mapping files.
   -F, -of, --outformat=<outputRdfFormat>
                              Output RDF format. Default: nq.
-                             Supported values are rt, nq, n3, rpb, owl, nt,
-                               jsonld, trig, shaclc, jsonld10, ttl, shc,
-                               jsonld11, rdf, trdf, xml, rj, pbrdf, trix
+                             Supported values are jsonld, jsonld10, jsonld11,
+                               n3, nq, nt, owl, pbrdf, rdf, rj, rpb, rt,
+                               shaclc, shc, trdf, trig, trix, ttl, xml
   -o, --output=<outputPath>  Output file path.
                              If path is directory, will default to fileName
                                `output`.
