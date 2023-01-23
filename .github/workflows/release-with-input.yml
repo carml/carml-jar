@@ -33,7 +33,7 @@ jobs:
         run: |
           wget -O carml-runner/src/main/resources/prefix/prefix.cc.context.json https://prefix.cc/context.json
           git add carml-runner/src/main/resources/prefix/prefix.cc.context.json
-          git commit -m "update prefix.cc context"
+          git diff --staged --quiet || git commit -m "update prefix.cc context"
           git push origin main
 
       - name: Cache local Maven repository
