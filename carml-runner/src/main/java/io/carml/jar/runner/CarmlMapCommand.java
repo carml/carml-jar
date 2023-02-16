@@ -180,7 +180,7 @@ public class CarmlMapCommand implements Callable<Integer> {
 
     return outputOptions.getOutputPath()
         .map(outputPath -> outputWithPath(outputPath, outputStatements, rdfFormat, pretty))
-        .orElse(outputWithoutPath(outputStatements, rdfFormat, pretty));
+        .orElseGet(() -> outputWithoutPath(outputStatements, rdfFormat, pretty));
   }
 
   private long outputWithPath(Path outputPath, Flux<Statement> statements, String rdfFormat, boolean pretty) {
