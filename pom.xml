@@ -49,7 +49,7 @@
         <lombok.version>1.18.26</lombok.version>
         <reactor.version>3.5.5</reactor.version>
         <spring.boot.version>2.7.10</spring.boot.version>
-        <picocli.version>4.7.2</picocli.version>
+        <picocli.version>4.7.3</picocli.version>
         <log4j.version>2.20.0</log4j.version>
         <system-lambda.version>1.2.1</system-lambda.version>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
