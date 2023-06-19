@@ -57,6 +57,8 @@ public class CarmlMapCommand implements Callable<Integer> {
 
   private final NamespacePrefixMapper namespacePrefixMapper;
 
+  private final List<RmlMapperConfigurer> rmlMapperConfigurers;
+
   private Map<String, String> namespaces;
 
   @Mixin
@@ -82,10 +84,11 @@ public class CarmlMapCommand implements Callable<Integer> {
   private final List<String> prefixDeclarations = new ArrayList<>();
 
   public CarmlMapCommand(ModelLoader modelLoader, OutputHandler outputHandler,
-      NamespacePrefixMapper namespacePrefixMapper) {
+      NamespacePrefixMapper namespacePrefixMapper, List<RmlMapperConfigurer> rmlMapperConfigurers) {
     this.modelLoader = modelLoader;
     this.outputHandler = outputHandler;
     this.namespacePrefixMapper = namespacePrefixMapper;
+    this.rmlMapperConfigurers = rmlMapperConfigurers;
   }
 
   @Override
@@ -146,6 +149,8 @@ public class CarmlMapCommand implements Callable<Integer> {
 
     outputOptions.getBaseIri()
         .ifPresent(mapperBuilder::baseIri);
+
+    rmlMapperConfigurers.forEach(rmlMapperConfigurer -> rmlMapperConfigurer.configureMapper(mapperBuilder));
 
     return mapperBuilder.build();
   }

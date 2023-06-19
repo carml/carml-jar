@@ -15,6 +15,7 @@
 - [CARML jar RDF4J](#carml-jar-rdf4j-output)
 - [CARML jar Jena](#carml-jar-jena-output)
 - [Building the project](#building-the-project)
+- [Customizing the mapper](#customizing-the-mapper)
 
 ## Introduction
 CARML jar is a CLI application for executing RML mappings with [CARML](https://github.com/carml/carml).
@@ -354,3 +355,44 @@ mvn clean package
 ```
 
 The runnable jars will be generated in the `/carml-app/*/target` dirs.
+
+## Customizing the mapper
+
+One way of customizing the mapper without modifying any code is via the `RmlMapperConfigurer` interface.
+
+Using Spring, it is very easy to create your own
+[Spring component](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/stereotype/Component.html)
+to configure the RmlMapper builder.
+
+This can be used to add functions to the builder for example.
+
+```java
+package foo.bar;
+
+import io.carml.engine.rdf.RdfRmlMapper;
+import io.carml.jar.runner.RmlMapperConfigurer;
+import org.springframework.stereotype.Component;
+
+@Component
+public class FunctionRmlMapperConfigurer implements RmlMapperConfigurer {
+
+  @Override
+  public void configureMapper(RdfRmlMapper.Builder builder) {
+    builder.addFunctions(new MyCustomFunctions());
+  }
+}
+```
+
+Now you can create your own Spring application which will detect and wire the component.
+Make sure to add the package of your component to the `@ComponentScan` annotation.
+
+```java
+@SpringBootApplication
+@ComponentScan({"io.carml.jar", "foo.bar"}) // Add your component's package
+public class MyCustomizedCarmlJarApplication {
+
+  public static void main(String... args) {
+    System.exit(SpringApplication.exit(SpringApplication.run(MyCustomizedCarmlJarApplication.class, args)));
+  }
+}
+```
