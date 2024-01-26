@@ -20,6 +20,8 @@
 ## Introduction
 CARML jar is a CLI application for executing RML mappings with [CARML](https://github.com/carml/carml).
 
+CARML jar runs on JDK 17.
+
 This project produces two artifacts:
 * CARML jar RDF4J - which outputs RDF using [RDF4J](https://rdf4j.org/)
 * CARML jar Jena - which outputs RDF using [Apache Jena](https://jena.apache.org/)
