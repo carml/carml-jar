@@ -10,7 +10,7 @@ public final class JenaLangs {
   private JenaLangs() {}
 
   private static final Set<Lang> GRAPH_LANGS =
-      Set.of(Lang.JSONLD, Lang.JSONLD10, Lang.JSONLD11, Lang.TRIG, Lang.N3, Lang.NQUADS, Lang.TRIX);
+      Set.of(Lang.JSONLD, Lang.JSONLD11, Lang.TRIG, Lang.N3, Lang.NQUADS, Lang.TRIX);
 
   public static Lang determineLang(String rdfFormat) {
     var lang = RDFLanguages.fileExtToLang(rdfFormat);
