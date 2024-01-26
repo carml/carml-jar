@@ -1,4 +1,0 @@
-# Lift configuration
-# Reference https://help.sonatype.com/lift/configuration-reference
-jdkVersion = "11"
-disableTools = ["errorprone"]
