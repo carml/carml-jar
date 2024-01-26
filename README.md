@@ -309,7 +309,7 @@ Usage:  map [-hVPv] [-F=<outputRdfFormat>] [-o=<outputPath>]
                                specified in the mapping files.
   -F, -of, --outformat=<outputRdfFormat>
                              Output RDF format. Default: nq.
-                             Supported values are jsonld, jsonld10, jsonld11,
+                             Supported values are jsonld, jsonld11,
                                n3, nq, nt, owl, pbrdf, rdf, rj, rpb, rt,
                                shaclc, shc, trdf, trig, trix, ttl, xml
   -o, --output=<outputPath>  Output file path.

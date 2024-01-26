@@ -135,16 +135,12 @@ public class DefaultNamespacePrefixMapper implements NamespacePrefixMapper {
     var fileExtension = FilenameUtils.getExtension(path.getFileName()
         .toString());
 
-    switch (fileExtension) {
-      case "json":
-        return PrefixMappingFormat.JSON;
-      case "yaml":
-      case "yml":
-        return PrefixMappingFormat.YAML;
-      default:
-        throw new PrefixMappingException(String.format(
-            "Could not determine prefix mapping file format for [%s]. Files must end in '.json', '.yaml', or '.yml.'",
-            path));
-    }
+    return switch (fileExtension) {
+      case "json" -> PrefixMappingFormat.JSON;
+      case "yaml", "yml" -> PrefixMappingFormat.YAML;
+      default -> throw new PrefixMappingException(String.format(
+          "Could not determine prefix mapping file format for [%s]. Files must end in '.json', '.yaml', or '.yml.'",
+          path));
+    };
   }
 }
