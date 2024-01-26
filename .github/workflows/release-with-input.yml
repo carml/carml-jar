@@ -30,9 +30,8 @@ jobs:
           git config user.name "GitHub Actions"
 
       - name: Update to latest prefix.cc context
-        # Temporarily disable certificate checking for prefix.cc pending https://github.com/cygri/prefix.cc/issues/37
         run: |
-          wget -O carml-runner/src/main/resources/prefix/prefix.cc.context.json https://prefix.cc/context.json --no-check-certificate
+          wget -O carml-runner/src/main/resources/prefix/prefix.cc.context.json https://prefix.cc/context.json
           git add carml-runner/src/main/resources/prefix/prefix.cc.context.json
           git diff --staged --quiet || git commit -m "update prefix.cc context"
           git push origin main
