@@ -45,7 +45,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <carml.version>0.4.10</carml.version>
         <rdf4j.version>4.3.9</rdf4j.version>
-        <classgraph.version>4.8.165</classgraph.version>
+        <classgraph.version>4.8.167</classgraph.version>
         <lombok.version>1.18.30</lombok.version>
         <reactor.version>3.6.2</reactor.version>
         <spring.boot.version>3.2.2</spring.boot.version>
