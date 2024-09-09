@@ -17,10 +17,11 @@ import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.RDFWriterRegistry;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import reactor.core.publisher.Flux;
 
-@SpringBootApplication
+@SpringBootApplication(exclude = {R2dbcAutoConfiguration.class})
 public class TestApplication {
 
   public static void main(String... args) {

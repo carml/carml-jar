@@ -41,6 +41,14 @@
             <artifactId>carml-logical-source-resolver-jsonpath</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.carml</groupId>
+            <artifactId>carml-logical-source-resolver-mysql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.carml</groupId>
+            <artifactId>carml-logical-source-resolver-postgresql</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse.rdf4j</groupId>
             <artifactId>rdf4j-rio-api</artifactId>
         </dependency>

@@ -15,12 +15,13 @@ import io.carml.jar.runner.prefix.PrefixMappingException;
 import io.carml.logicalsourceresolver.CsvResolver;
 import io.carml.logicalsourceresolver.JsonPathResolver;
 import io.carml.logicalsourceresolver.XPathResolver;
+import io.carml.logicalsourceresolver.sql.MySqlResolver;
+import io.carml.logicalsourceresolver.sql.PostgreSqlResolver;
 import io.carml.model.Resource;
 import io.carml.model.TriplesMap;
 import io.carml.util.ModelSerializer;
 import io.carml.util.RmlMappingLoader;
 import io.carml.util.RmlNamespaces;
-import io.carml.vocab.Rdf;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -134,9 +135,11 @@ public class CarmlMapCommand implements Callable<Integer> {
     }
 
     var mapperBuilder = RdfRmlMapper.builder()
-        .setLogicalSourceResolver(Rdf.Ql.Csv, CsvResolver::getInstance)
-        .setLogicalSourceResolver(Rdf.Ql.JsonPath, JsonPathResolver::getInstance)
-        .setLogicalSourceResolver(Rdf.Ql.XPath, XPathResolver::getInstance)
+        .logicalSourceResolverMatcher(CsvResolver.Matcher.getInstance())
+        .logicalSourceResolverMatcher(JsonPathResolver.Matcher.getInstance())
+        .logicalSourceResolverMatcher(XPathResolver.Matcher.getInstance())
+        .logicalSourceResolverMatcher(MySqlResolver.Matcher.getInstance())
+        .logicalSourceResolverMatcher(PostgreSqlResolver.Matcher.getInstance())
         .triplesMaps(mapping);
 
     var relativeSourceLocation = mappingFileOptions.getGroup()
