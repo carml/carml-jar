@@ -12,6 +12,10 @@ public class GrelFunctions {
   @FnoFunction(GREL + "string_split")
   public static List<String> split(@FnoParam(GREL + "valueParameter") String s,
       @FnoParam(GREL + "p_string_sep") String sep) {
+    if (s == null) {
+      return List.of();
+    }
+
     return Arrays.stream(s.split(sep))
         .toList();
   }
