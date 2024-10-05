@@ -45,12 +45,12 @@
         <maven.compiler.target>17</maven.compiler.target>
         <carml.version>0.4.11</carml.version>
         <rdf4j.version>5.0.2</rdf4j.version>
-        <classgraph.version>4.8.175</classgraph.version>
+        <classgraph.version>4.8.177</classgraph.version>
         <lombok.version>1.18.34</lombok.version>
-        <reactor.version>3.6.9</reactor.version>
+        <reactor.version>3.6.10</reactor.version>
         <spring.boot.version>3.2.2</spring.boot.version>
         <picocli.version>4.7.6</picocli.version>
-        <log4j.version>2.23.1</log4j.version>
+        <log4j.version>2.24.1</log4j.version>
         <system-lambda.version>1.2.1</system-lambda.version>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.organization>carml</sonar.organization>
@@ -207,7 +207,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-gpg-plugin</artifactId>
-                    <version>3.2.5</version>
+                    <version>3.2.7</version>
                     <executions>
                         <execution>
                             <id>sign-artifacts</id>
@@ -248,7 +248,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.4.0</version>
+                    <version>3.5.0</version>
                     <configuration>
                         <!-- dependent on https://github.com/stefanbirkner/system-lambda/issues/27 -->
                         <argLine>
@@ -335,14 +335,14 @@
                         <dependency>
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
-                            <version>10.17.0</version>
+                            <version>10.18.2</version>
                         </dependency>
                     </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.8.0</version>
+                    <version>3.10.1</version>
                     <configuration>
                         <failOnError>false</failOnError>
                     </configuration>
