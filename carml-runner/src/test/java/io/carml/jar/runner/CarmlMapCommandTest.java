@@ -71,10 +71,9 @@ class CarmlMapCommandTest {
   }
 
   @Test
-  void givenMappingAndSystemIn_whenMapCommandRun_thenReturnStreamingNqOutput() throws Exception {
+  void givenMappingAndSystemIn_whenMapCommandRun_thenReturnStreamingNqOutput() {
     // Given
     var mapping = getStringForPath(TEST_PATH, "mapping", "mapping.inputstream.rml.ttl");
-    var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
     var args = new String[] {"map", "-m", mapping};
     var stdin = System.in;
     var inputStream = IOUtils.toInputStream(String.format("id,make%n1,Toyota%n2,Mercedes"), StandardCharsets.UTF_8);
