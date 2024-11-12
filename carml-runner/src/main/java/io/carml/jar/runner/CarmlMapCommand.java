@@ -12,11 +12,6 @@ import io.carml.jar.runner.option.OutputOptions;
 import io.carml.jar.runner.output.OutputHandler;
 import io.carml.jar.runner.prefix.NamespacePrefixMapper;
 import io.carml.jar.runner.prefix.PrefixMappingException;
-import io.carml.logicalsourceresolver.CsvResolver;
-import io.carml.logicalsourceresolver.JsonPathResolver;
-import io.carml.logicalsourceresolver.XPathResolver;
-import io.carml.logicalsourceresolver.sql.MySqlResolver;
-import io.carml.logicalsourceresolver.sql.PostgreSqlResolver;
 import io.carml.model.Resource;
 import io.carml.model.TriplesMap;
 import io.carml.util.ModelSerializer;
@@ -135,11 +130,6 @@ public class CarmlMapCommand implements Callable<Integer> {
     }
 
     var mapperBuilder = RdfRmlMapper.builder()
-        .logicalSourceResolverMatcher(CsvResolver.Matcher.getInstance())
-        .logicalSourceResolverMatcher(JsonPathResolver.Matcher.getInstance())
-        .logicalSourceResolverMatcher(XPathResolver.Matcher.getInstance())
-        .logicalSourceResolverMatcher(MySqlResolver.Matcher.getInstance())
-        .logicalSourceResolverMatcher(PostgreSqlResolver.Matcher.getInstance())
         .triplesMaps(mapping);
 
     var relativeSourceLocation = mappingFileOptions.getGroup()
@@ -176,7 +166,6 @@ public class CarmlMapCommand implements Callable<Integer> {
   private Flux<Statement> map(RdfRmlMapper rmlMapper) {
     return rmlMapper.map(System.in);
   }
-
 
   private long handleOutput(Flux<Statement> statements) {
     var rdfFormat = outputOptions.getOutputRdfFormat();
