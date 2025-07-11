@@ -50,7 +50,7 @@
         <reactor.version>3.7.7</reactor.version>
         <spring.boot.version>3.2.2</spring.boot.version>
         <picocli.version>4.7.7</picocli.version>
-        <log4j.version>2.25.0</log4j.version>
+        <log4j.version>2.25.1</log4j.version>
         <system-lambda.version>1.2.1</system-lambda.version>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.organization>carml</sonar.organization>
