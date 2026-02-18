@@ -12,15 +12,11 @@ import io.carml.jar.runner.CarmlJarException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import org.eclipse.rdf4j.model.ValueFactory;
-import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.junit.jupiter.api.Test;
 
 class Rdf4jModelResolverTest {
 
   private static final Path TEST_PATH = getTestSourcePath(Paths.get("input", "rdf4j-model-resolver"));
-
-  private static final ValueFactory VALUE_FACTORY = SimpleValueFactory.getInstance();
 
   private final Rdf4jModelLoader rdf4jModelLoader = new Rdf4jModelLoader();
 
