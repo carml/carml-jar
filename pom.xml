@@ -40,9 +40,8 @@
     </scm>
 
     <properties>
+        <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
         <carml.version>1.0.0-SNAPSHOT</carml.version>
         <rdf4j.version>5.0.2</rdf4j.version>
         <classgraph.version>4.8.177</classgraph.version>
