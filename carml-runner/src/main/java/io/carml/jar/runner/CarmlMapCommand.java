@@ -79,6 +79,10 @@ public class CarmlMapCommand implements Callable<Integer> {
       "Multiple declarations can be separated by ','. For example: ex=http://example.com/,foo,bar"})
   private final List<String> prefixDeclarations = new ArrayList<>();
 
+  @Option(names = {"-S", "--strict"}, order = OptionOrder.STRICT_ORDER, description = {"Enable strict mode.",
+      "Raises an error if a reference expression never produces a value across all records of a logical source."})
+  private boolean strict;
+
   public CarmlMapCommand(ModelLoader modelLoader, OutputHandler outputHandler,
       NamespacePrefixMapper namespacePrefixMapper, List<RmlMapperConfigurer> rmlMapperConfigurers) {
     this.modelLoader = modelLoader;
@@ -130,7 +134,8 @@ public class CarmlMapCommand implements Callable<Integer> {
     }
 
     var mapperBuilder = RdfRmlMapper.builder()
-        .triplesMaps(mapping);
+        .triplesMaps(mapping)
+        .strictMode(strict);
 
     var relativeSourceLocation = mappingFileOptions.getGroup()
         .getRelativeSourceLocation();
