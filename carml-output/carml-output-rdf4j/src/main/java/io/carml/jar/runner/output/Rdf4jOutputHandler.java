@@ -30,6 +30,8 @@ import reactor.util.annotation.NonNull;
 @Component
 public class Rdf4jOutputHandler implements OutputHandler {
 
+  private static final int BATCH_SIZE = 1024;
+
   private static final Set<String> STREAMING_FORMAT = Set.of(nt.name(), nq.name());
 
   private static final Set<String> POTENTIALLY_STREAMING_FORMAT =
@@ -85,9 +87,20 @@ public class Rdf4jOutputHandler implements OutputHandler {
       rdfWriter.startRDF();
       namespaces.forEach(rdfWriter::handleNamespace);
 
-      statementFlux.doOnNext(rdfWriter::handleStatement)
-          .doOnNext(statement -> counter.getAndIncrement())
-          .blockLast();
+      if (STREAMING_FORMAT.contains(format)) {
+        statementFlux.buffer(BATCH_SIZE)
+            .doOnNext(batch -> {
+              for (var statement : batch) {
+                rdfWriter.handleStatement(statement);
+              }
+              counter.addAndGet(batch.size());
+            })
+            .blockLast();
+      } else {
+        statementFlux.doOnNext(rdfWriter::handleStatement)
+            .doOnNext(statement -> counter.getAndIncrement())
+            .blockLast();
+      }
 
       rdfWriter.endRDF();
     } catch (RDFHandlerException rdfHandlerException) {

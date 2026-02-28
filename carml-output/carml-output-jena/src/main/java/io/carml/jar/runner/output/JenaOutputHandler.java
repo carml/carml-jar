@@ -2,6 +2,8 @@ package io.carml.jar.runner.output;
 
 import static io.carml.jar.runner.format.JenaLangs.determineLang;
 import static io.carml.jar.runner.format.JenaLangs.supportsGraphs;
+import static io.carml.jar.runner.format.RdfFormat.nq;
+import static io.carml.jar.runner.format.RdfFormat.nt;
 import static io.carml.util.jena.JenaCollectors.toDatasetGraph;
 
 import io.carml.jar.runner.format.JenaLangs;
@@ -11,8 +13,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.NonNull;
-import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.riot.RDFWriter;
+import org.apache.jena.riot.RIOT;
 import org.apache.jena.riot.system.StreamRDFWriter;
+import org.apache.jena.sparql.util.Context;
 import org.eclipse.rdf4j.model.Statement;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -20,7 +24,9 @@ import reactor.core.publisher.Flux;
 @Component
 public class JenaOutputHandler implements OutputHandler {
 
-  private static final Set<String> STREAMING_FORMAT = Set.of("nt", "nq");
+  private static final int BATCH_SIZE = 1024;
+
+  private static final Set<String> STREAMING_FORMAT = Set.of(nt.name(), nq.name());
 
   /**
    * Write a {@link Flux} of {@link Statement}s to the provided {@link OutputStream} as RDF in the
@@ -47,12 +53,22 @@ public class JenaOutputHandler implements OutputHandler {
     var prefixes = datasetGraph.prefixes();
     namespaces.forEach(prefixes::add);
 
+    // TODO remove directive style override when switching to RDF 1.2
     if (supportsGraphs(lang)) {
-      RDFDataMgr.write(outputStream, datasetGraph, lang);
+      RDFWriter.source(datasetGraph)
+          .lang(lang)
+          .set(RIOT.symTurtleDirectiveStyle, "at")
+          .output(outputStream);
     } else {
-      RDFDataMgr.write(outputStream, datasetGraph.getDefaultGraph(), lang);
+      RDFWriter.source(datasetGraph.getDefaultGraph())
+          .lang(lang)
+          .set(RIOT.symTurtleDirectiveStyle, "at")
+          .output(outputStream);
       datasetGraph.listGraphNodes()
-          .forEachRemaining(node -> RDFDataMgr.write(outputStream, datasetGraph.getGraph(node), lang));
+          .forEachRemaining(node -> RDFWriter.source(datasetGraph.getGraph(node))
+              .lang(lang)
+              .set(RIOT.symTurtleDirectiveStyle, "at")
+              .output(outputStream));
     }
 
     return counter.get();
@@ -73,14 +89,28 @@ public class JenaOutputHandler implements OutputHandler {
       @NonNull Map<String, String> namespaces, @NonNull OutputStream outputStream) {
     var counter = new AtomicLong();
     var lang = determineLang(rdfFormat);
-    var streamRdf = StreamRDFWriter.getWriterStream(outputStream, lang);
+    // TODO remove directive style override when switching to RDF 1.2
+    var context = new Context();
+    context.set(RIOT.symTurtleDirectiveStyle, "at");
+    var streamRdf = StreamRDFWriter.getWriterStream(outputStream, lang, context);
     streamRdf.start();
     namespaces.forEach(streamRdf::prefix);
 
-    statementFlux.map(JenaConverters::toQuad)
-        .doOnNext(streamRdf::quad)
-        .doOnNext(quad -> counter.getAndIncrement())
-        .blockLast();
+    if (STREAMING_FORMAT.contains(rdfFormat)) {
+      statementFlux.buffer(BATCH_SIZE)
+          .doOnNext(batch -> {
+            for (var statement : batch) {
+              streamRdf.quad(JenaConverters.toQuad(statement));
+            }
+            counter.addAndGet(batch.size());
+          })
+          .blockLast();
+    } else {
+      statementFlux.map(JenaConverters::toQuad)
+          .doOnNext(streamRdf::quad)
+          .doOnNext(quad -> counter.getAndIncrement())
+          .blockLast();
+    }
 
     streamRdf.finish();
 
