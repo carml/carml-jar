@@ -25,17 +25,20 @@ import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.util.ModelCollector;
 import org.eclipse.rdf4j.model.util.Models;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import reactor.core.publisher.Flux;
 
 @SpringBootTest(classes = {TestApplication.class})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ExtendWith(MockitoExtension.class)
 class CarmlMapCommandTest {
 
   private static final Path TEST_PATH = getTestSourcePath(Paths.get("carml-map-command"));
@@ -43,7 +46,7 @@ class CarmlMapCommandTest {
   @Autowired
   private CarmlRunner carmlRunner;
 
-  @SpyBean
+  @MockitoSpyBean
   private OutputHandler outputHandler;
 
   @Captor
