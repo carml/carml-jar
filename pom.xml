@@ -107,16 +107,7 @@
                 <artifactId>carml-logical-source-resolver-jsonpath</artifactId>
                 <version>${carml.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.carml</groupId>
-                <artifactId>carml-logical-source-resolver-mysql</artifactId>
-                <version>${carml.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.carml</groupId>
-                <artifactId>carml-logical-source-resolver-postgresql</artifactId>
-                <version>${carml.version}</version>
-            </dependency>
+
             <dependency>
                 <groupId>io.carml</groupId>
                 <artifactId>carml-converters-jena</artifactId>

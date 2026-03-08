@@ -5,6 +5,7 @@ import static picocli.CommandLine.ExitCode.USAGE;
 
 import io.carml.engine.rdf.RdfRmlMapper;
 import io.carml.jar.runner.input.ModelLoader;
+import io.carml.jar.runner.option.EvaluatorMode;
 import io.carml.jar.runner.option.LoggingOptions;
 import io.carml.jar.runner.option.MappingFileOptions;
 import io.carml.jar.runner.option.OptionOrder;
@@ -12,6 +13,7 @@ import io.carml.jar.runner.option.OutputOptions;
 import io.carml.jar.runner.output.OutputHandler;
 import io.carml.jar.runner.prefix.NamespacePrefixMapper;
 import io.carml.jar.runner.prefix.PrefixMappingException;
+import io.carml.logicalview.DefaultLogicalViewEvaluatorFactory;
 import io.carml.model.Resource;
 import io.carml.model.TriplesMap;
 import io.carml.util.ModelSerializer;
@@ -83,6 +85,12 @@ public class CarmlMapCommand implements Callable<Integer> {
       "Raises an error if a reference expression never produces a value across all records of a logical source."})
   private boolean strict;
 
+  @Option(names = {"-E", "--evaluator"}, defaultValue = "auto", order = OptionOrder.EVALUATOR_ORDER,
+      description = {"Logical view evaluator mode.",
+          "auto: Select best evaluator per view via ServiceLoader (default).",
+          "reactive: Force reactive evaluator for all views."})
+  private EvaluatorMode evaluatorMode;
+
   public CarmlMapCommand(ModelLoader modelLoader, OutputHandler outputHandler,
       NamespacePrefixMapper namespacePrefixMapper, List<RmlMapperConfigurer> rmlMapperConfigurers) {
     this.modelLoader = modelLoader;
@@ -147,6 +155,10 @@ public class CarmlMapCommand implements Callable<Integer> {
 
     outputOptions.getBaseIri()
         .ifPresent(mapperBuilder::baseIri);
+
+    if (evaluatorMode == EvaluatorMode.reactive) {
+      mapperBuilder.logicalViewEvaluatorFactory(new DefaultLogicalViewEvaluatorFactory());
+    }
 
     rmlMapperConfigurers.forEach(rmlMapperConfigurer -> rmlMapperConfigurer.configureMapper(mapperBuilder));
 

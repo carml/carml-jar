@@ -234,4 +234,22 @@ class CarmlMapCommandTest {
         .ifPresentOrElse(subject -> assertThat(subject.stringValue(), startsWith(baseIri)),
             () -> fail("Expected subject but non found."));
   }
+
+  @Test
+  void givenReactiveEvaluatorArg_whenMapCommandRun_thenReturnStreamingNqOutput() {
+    // Given
+    var mapping = getStringForPath(TEST_PATH, "mapping", "mapping.rml.ttl");
+    var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
+    var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-E", "reactive"};
+
+    // When
+    carmlRunner.run(args);
+
+    // Then
+    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
+    var model = statementsCaptor.getValue()
+        .collect(new ModelCollector())
+        .block();
+    assertThat(model.size(), is(2));
+  }
 }

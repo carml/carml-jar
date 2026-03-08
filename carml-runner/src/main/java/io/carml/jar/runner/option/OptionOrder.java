@@ -27,4 +27,6 @@ public final class OptionOrder {
   public static final int VERBOSITY_ORDER = 110;
 
   public static final int STRICT_ORDER = 120;
+
+  public static final int EVALUATOR_ORDER = 130;
 }
