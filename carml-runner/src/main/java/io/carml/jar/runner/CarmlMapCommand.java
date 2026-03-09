@@ -14,6 +14,7 @@ import io.carml.jar.runner.output.OutputHandler;
 import io.carml.jar.runner.prefix.NamespacePrefixMapper;
 import io.carml.jar.runner.prefix.PrefixMappingException;
 import io.carml.logicalview.DefaultLogicalViewEvaluatorFactory;
+import io.carml.logicalview.duckdb.DuckDbLogicalViewEvaluatorFactory;
 import io.carml.model.Resource;
 import io.carml.model.TriplesMap;
 import io.carml.util.ModelSerializer;
@@ -88,7 +89,7 @@ public class CarmlMapCommand implements Callable<Integer> {
   @Option(names = {"-E", "--evaluator"}, defaultValue = "auto", order = OptionOrder.EVALUATOR_ORDER,
       description = {"Logical view evaluator mode.",
           "auto: Select best evaluator per view via ServiceLoader (default).",
-          "reactive: Force reactive evaluator for all views."})
+          "reactive: Force reactive evaluator for all views.", "duckdb: Force DuckDB evaluator for all views."})
   private EvaluatorMode evaluatorMode;
 
   public CarmlMapCommand(ModelLoader modelLoader, OutputHandler outputHandler,
@@ -158,6 +159,8 @@ public class CarmlMapCommand implements Callable<Integer> {
 
     if (evaluatorMode == EvaluatorMode.reactive) {
       mapperBuilder.logicalViewEvaluatorFactory(new DefaultLogicalViewEvaluatorFactory());
+    } else if (evaluatorMode == EvaluatorMode.duckdb) {
+      mapperBuilder.logicalViewEvaluatorFactory(new DuckDbLogicalViewEvaluatorFactory());
     }
 
     rmlMapperConfigurers.forEach(rmlMapperConfigurer -> rmlMapperConfigurer.configureMapper(mapperBuilder));

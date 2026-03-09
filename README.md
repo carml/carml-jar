@@ -31,11 +31,12 @@ This project produces two artifacts:
 ### Map RDF file to output
 
 ```console
-Usage:  map [-hVPv] [-F=<outputRdfFormat>] [-o=<outputPath>]
-            [-M=<prefixMappings>]... [-p=<prefixDeclarations>[,
-            <prefixDeclarations>...]]... [-b=<baseIri>] [-l=<limit>]
-            (-m=<mappingFiles> [-m=<mappingFiles>]...
-            [-f=<mappingFileRdfFormat>] [-r=<relativeSourceLocation>])
+Usage:  map [-hVPSv] [-E=<evaluatorMode>] [-F=<outputRdfFormat>]
+            [-o=<outputPath>] [-M=<prefixMappings>]...
+            [-p=<prefixDeclarations>[,<prefixDeclarations>...]]...
+            [-b=<baseIri>] [-l=<limit>] (-m=<mappingFiles>
+            [-m=<mappingFiles>]... [-f=<mappingFileRdfFormat>]
+            [-r=<relativeSourceLocation>])
   -h, --help                 Show this help message and exit.
   -V, --version              Print version information and exit.
   -m, --mapping=<mappingFiles>
@@ -97,6 +98,16 @@ Usage:  map [-hVPv] [-F=<outputRdfFormat>] [-o=<outputPath>]
                                increase verbosity.
                              For example `-v -v`, or `-vv` or `--verbose
                                --verbose`
+  -S, --strict               Enable strict mode.
+                             Raises an error if a reference expression never
+                               produces a value across all records of a logical
+                               source.
+  -E, --evaluator=<evaluatorMode>
+                             Logical view evaluator mode.
+                             auto: Select best evaluator per view via
+                               ServiceLoader (default).
+                             reactive: Force reactive evaluator for all views.
+                             duckdb: Force DuckDB evaluator for all views.
 ```
 
 For example, the following command:
@@ -202,11 +213,12 @@ The CARML jar RDF4J artifact supports the same output formats (`-of`) that are s
 See the `map` help-description for details:
 
 ```console
-Usage:  map [-hVPv] [-F=<outputRdfFormat>] [-o=<outputPath>]
-            [-M=<prefixMappings>]... [-p=<prefixDeclarations>[,
-            <prefixDeclarations>...]]... [-b=<baseIri>] [-l=<limit>]
-            (-m=<mappingFiles> [-m=<mappingFiles>]...
-            [-f=<mappingFileRdfFormat>] [-r=<relativeSourceLocation>])
+Usage:  map [-hVPSv] [-E=<evaluatorMode>] [-F=<outputRdfFormat>]
+            [-o=<outputPath>] [-M=<prefixMappings>]...
+            [-p=<prefixDeclarations>[,<prefixDeclarations>...]]...
+            [-b=<baseIri>] [-l=<limit>] (-m=<mappingFiles>
+            [-m=<mappingFiles>]... [-f=<mappingFileRdfFormat>]
+            [-r=<relativeSourceLocation>])
   -h, --help                 Show this help message and exit.
   -V, --version              Print version information and exit.
   -m, --mapping=<mappingFiles>
@@ -268,6 +280,16 @@ Usage:  map [-hVPv] [-F=<outputRdfFormat>] [-o=<outputPath>]
                                increase verbosity.
                              For example `-v -v`, or `-vv` or `--verbose
                                --verbose`
+  -S, --strict               Enable strict mode.
+                             Raises an error if a reference expression never
+                               produces a value across all records of a logical
+                               source.
+  -E, --evaluator=<evaluatorMode>
+                             Logical view evaluator mode.
+                             auto: Select best evaluator per view via
+                               ServiceLoader (default).
+                             reactive: Force reactive evaluator for all views.
+                             duckdb: Force DuckDB evaluator for all views.
 ```
 
 ## CARML jar Jena output
@@ -279,11 +301,12 @@ output formats (`-of`) are those that [Jena supports](https://jena.apache.org/do
 See the `map` help-description for details:
 
 ```console
-Usage:  map [-hVPv] [-F=<outputRdfFormat>] [-o=<outputPath>]
-            [-M=<prefixMappings>]... [-p=<prefixDeclarations>[,
-            <prefixDeclarations>...]]... [-b=<baseIri>] [-l=<limit>]
-            (-m=<mappingFiles> [-m=<mappingFiles>]...
-            [-f=<mappingFileRdfFormat>] [-r=<relativeSourceLocation>])
+Usage:  map [-hVPSv] [-E=<evaluatorMode>] [-F=<outputRdfFormat>]
+            [-o=<outputPath>] [-M=<prefixMappings>]...
+            [-p=<prefixDeclarations>[,<prefixDeclarations>...]]...
+            [-b=<baseIri>] [-l=<limit>] (-m=<mappingFiles>
+            [-m=<mappingFiles>]... [-f=<mappingFileRdfFormat>]
+            [-r=<relativeSourceLocation>])
   -h, --help                 Show this help message and exit.
   -V, --version              Print version information and exit.
   -m, --mapping=<mappingFiles>
@@ -346,6 +369,16 @@ Usage:  map [-hVPv] [-F=<outputRdfFormat>] [-o=<outputPath>]
                                increase verbosity.
                              For example `-v -v`, or `-vv` or `--verbose
                                --verbose`
+  -S, --strict               Enable strict mode.
+                             Raises an error if a reference expression never
+                               produces a value across all records of a logical
+                               source.
+  -E, --evaluator=<evaluatorMode>
+                             Logical view evaluator mode.
+                             auto: Select best evaluator per view via
+                               ServiceLoader (default).
+                             reactive: Force reactive evaluator for all views.
+                             duckdb: Force DuckDB evaluator for all views.
 ```
 
 ## Building the project

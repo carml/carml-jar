@@ -40,6 +40,10 @@
             <groupId>io.carml</groupId>
             <artifactId>carml-logical-source-resolver-jsonpath</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.carml</groupId>
+            <artifactId>carml-logical-view-duckdb</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.eclipse.rdf4j</groupId>

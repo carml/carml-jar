@@ -107,6 +107,11 @@
                 <artifactId>carml-logical-source-resolver-jsonpath</artifactId>
                 <version>${carml.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.carml</groupId>
+                <artifactId>carml-logical-view-duckdb</artifactId>
+                <version>${carml.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>io.carml</groupId>

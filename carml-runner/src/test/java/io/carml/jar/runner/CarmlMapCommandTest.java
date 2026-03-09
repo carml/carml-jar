@@ -252,4 +252,19 @@ class CarmlMapCommandTest {
         .block();
     assertThat(model.size(), is(2));
   }
+
+  @Test
+  void givenDuckdbEvaluatorArg_whenMapCommandRun_thenReturnStreamingNqOutput() {
+    // Given
+    var mapping = getStringForPath(TEST_PATH, "mapping", "mapping.rml.ttl");
+    var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
+    var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-E", "duckdb"};
+
+    // When
+    carmlRunner.run(args);
+
+    // Then
+    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
+    assertThat(carmlRunner.getExitCode(), is(0));
+  }
 }

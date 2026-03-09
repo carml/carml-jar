@@ -87,7 +87,6 @@ public class JenaOutputHandler implements OutputHandler {
   @Override
   public long outputStreaming(@NonNull Flux<Statement> statementFlux, @NonNull String rdfFormat,
       @NonNull Map<String, String> namespaces, @NonNull OutputStream outputStream) {
-    var counter = new AtomicLong();
     var lang = determineLang(rdfFormat);
     // TODO remove directive style override when switching to RDF 1.2
     var context = new Context();
@@ -95,6 +94,7 @@ public class JenaOutputHandler implements OutputHandler {
     var streamRdf = StreamRDFWriter.getWriterStream(outputStream, lang, context);
     streamRdf.start();
     namespaces.forEach(streamRdf::prefix);
+    var counter = new AtomicLong();
 
     if (STREAMING_FORMAT.contains(rdfFormat)) {
       statementFlux.buffer(BATCH_SIZE)
