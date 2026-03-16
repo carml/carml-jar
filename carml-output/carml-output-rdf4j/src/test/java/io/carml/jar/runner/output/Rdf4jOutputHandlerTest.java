@@ -1,6 +1,7 @@
 package io.carml.jar.runner.output;
 
 import static io.carml.jar.runner.format.RdfFormat.nq;
+import static io.carml.jar.runner.format.RdfFormat.nt;
 import static io.carml.jar.runner.format.RdfFormat.ttl;
 import static org.eclipse.rdf4j.model.util.Statements.statement;
 import static org.eclipse.rdf4j.model.util.Values.bnode;
@@ -76,6 +77,16 @@ class Rdf4jOutputHandlerTest {
   }
 
   @Test
+  void givenStatementsAndNtFormat_whenOutputStreaming_thenOutputNt() {
+    var statementFlux = generateStatementsFor("foo", 5);
+
+    var nrOfStatements = rdf4jOutputHandler.outputStreaming(statementFlux, nt.name(), Map.of(), System.out);
+
+    assertThat(nrOfStatements, is(5L));
+    assertThat(StringUtils.countMatches(outContent.toString(), RDF.TYPE.stringValue()), is(5));
+  }
+
+  @Test
   void givenStatementsAndNqFormat_whenOutputStreaming_thenOutputNq() {
     // Given
     var statementFlux = generateStatementsFor("foo", 5);
@@ -111,6 +122,8 @@ class Rdf4jOutputHandlerTest {
   static Stream<Arguments> formatStreamableArgs() {
     return Stream.of(//
         Arguments.of("ttl", true, false), //
+        Arguments.of("nt", false, true), //
+        Arguments.of("nt", true, true), //
         Arguments.of("nq", false, true), //
         Arguments.of("nq", true, true), //
         Arguments.of("trigs", false, true));

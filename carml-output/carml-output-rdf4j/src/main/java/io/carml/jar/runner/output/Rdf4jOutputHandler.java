@@ -11,10 +11,13 @@ import static io.carml.jar.runner.format.RdfFormat.ttl;
 import static io.carml.jar.runner.format.RdfFormat.ttls;
 
 import io.carml.jar.runner.CarmlJarException;
+import io.carml.output.FastNQuadsSerializer;
+import io.carml.output.FastNTriplesSerializer;
 import java.io.OutputStream;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.NonNull;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.util.ModelCollector;
@@ -25,12 +28,9 @@ import org.eclipse.rdf4j.rio.WriterConfig;
 import org.eclipse.rdf4j.rio.helpers.BasicWriterSettings;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
-import reactor.util.annotation.NonNull;
 
 @Component
 public class Rdf4jOutputHandler implements OutputHandler {
-
-  private static final int BATCH_SIZE = 1024;
 
   private static final Set<String> STREAMING_FORMAT = Set.of(nt.name(), nq.name());
 
@@ -80,6 +80,25 @@ public class Rdf4jOutputHandler implements OutputHandler {
   @Override
   public long outputStreaming(@NonNull Flux<Statement> statementFlux, @NonNull String format,
       @NonNull Map<String, String> namespaces, @NonNull OutputStream outputStream) {
+    if (STREAMING_FORMAT.contains(format)) {
+      return outputStreamingFast(statementFlux, format, outputStream);
+    }
+
+    return outputStreamingRio(statementFlux, format, namespaces, outputStream);
+  }
+
+  private long outputStreamingFast(Flux<Statement> statementFlux, String format, OutputStream outputStream) {
+    if (nt.name()
+        .equals(format)) {
+      return FastNTriplesSerializer.withDefaults()
+          .serialize(statementFlux, outputStream);
+    }
+    return FastNQuadsSerializer.withDefaults()
+        .serialize(statementFlux, outputStream);
+  }
+
+  private long outputStreamingRio(Flux<Statement> statementFlux, String format, Map<String, String> namespaces,
+      OutputStream outputStream) {
     RDFWriter rdfWriter = Rio.createWriter(determineRdfFormat(format), outputStream);
     AtomicLong counter = new AtomicLong();
 
@@ -87,20 +106,9 @@ public class Rdf4jOutputHandler implements OutputHandler {
       rdfWriter.startRDF();
       namespaces.forEach(rdfWriter::handleNamespace);
 
-      if (STREAMING_FORMAT.contains(format)) {
-        statementFlux.buffer(BATCH_SIZE)
-            .doOnNext(batch -> {
-              for (var statement : batch) {
-                rdfWriter.handleStatement(statement);
-              }
-              counter.addAndGet(batch.size());
-            })
-            .blockLast();
-      } else {
-        statementFlux.doOnNext(rdfWriter::handleStatement)
-            .doOnNext(statement -> counter.getAndIncrement())
-            .blockLast();
-      }
+      statementFlux.doOnNext(rdfWriter::handleStatement)
+          .doOnNext(statement -> counter.getAndIncrement())
+          .blockLast();
 
       rdfWriter.endRDF();
     } catch (RDFHandlerException rdfHandlerException) {

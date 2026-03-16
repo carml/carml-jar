@@ -7,6 +7,8 @@ import static io.carml.jar.runner.format.RdfFormat.nt;
 import static io.carml.util.jena.JenaCollectors.toDatasetGraph;
 
 import io.carml.jar.runner.format.JenaLangs;
+import io.carml.output.FastNQuadsSerializer;
+import io.carml.output.FastNTriplesSerializer;
 import io.carml.util.jena.JenaConverters;
 import java.io.OutputStream;
 import java.util.Map;
@@ -23,8 +25,6 @@ import reactor.core.publisher.Flux;
 
 @Component
 public class JenaOutputHandler implements OutputHandler {
-
-  private static final int BATCH_SIZE = 1024;
 
   private static final Set<String> STREAMING_FORMAT = Set.of(nt.name(), nq.name());
 
@@ -87,6 +87,25 @@ public class JenaOutputHandler implements OutputHandler {
   @Override
   public long outputStreaming(@NonNull Flux<Statement> statementFlux, @NonNull String rdfFormat,
       @NonNull Map<String, String> namespaces, @NonNull OutputStream outputStream) {
+    if (STREAMING_FORMAT.contains(rdfFormat)) {
+      return outputStreamingFast(statementFlux, rdfFormat, outputStream);
+    }
+
+    return outputStreamingJena(statementFlux, rdfFormat, namespaces, outputStream);
+  }
+
+  private long outputStreamingFast(Flux<Statement> statementFlux, String rdfFormat, OutputStream outputStream) {
+    if (nt.name()
+        .equals(rdfFormat)) {
+      return FastNTriplesSerializer.withDefaults()
+          .serialize(statementFlux, outputStream);
+    }
+    return FastNQuadsSerializer.withDefaults()
+        .serialize(statementFlux, outputStream);
+  }
+
+  private long outputStreamingJena(Flux<Statement> statementFlux, String rdfFormat, Map<String, String> namespaces,
+      OutputStream outputStream) {
     var lang = determineLang(rdfFormat);
     // TODO remove directive style override when switching to RDF 1.2
     var context = new Context();
@@ -96,21 +115,10 @@ public class JenaOutputHandler implements OutputHandler {
     namespaces.forEach(streamRdf::prefix);
     var counter = new AtomicLong();
 
-    if (STREAMING_FORMAT.contains(rdfFormat)) {
-      statementFlux.buffer(BATCH_SIZE)
-          .doOnNext(batch -> {
-            for (var statement : batch) {
-              streamRdf.quad(JenaConverters.toQuad(statement));
-            }
-            counter.addAndGet(batch.size());
-          })
-          .blockLast();
-    } else {
-      statementFlux.map(JenaConverters::toQuad)
-          .doOnNext(streamRdf::quad)
-          .doOnNext(quad -> counter.getAndIncrement())
-          .blockLast();
-    }
+    statementFlux.map(JenaConverters::toQuad)
+        .doOnNext(streamRdf::quad)
+        .doOnNext(quad -> counter.getAndIncrement())
+        .blockLast();
 
     streamRdf.finish();
 
