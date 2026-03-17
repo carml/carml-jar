@@ -1,0 +1,11 @@
+.git
+.idea
+.style
+.github
+**/target
+!carml-app/carml-app-rdf4j/target/*.jar
+*.iml
+*.iws
+input/
+output/
+rml/
