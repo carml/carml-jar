@@ -16,12 +16,10 @@ import lombok.NonNull;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.stereotype.Component;
 
-@Component
 public class DefaultNamespacePrefixMapper implements NamespacePrefixMapper {
 
-  private static final Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger(DefaultNamespacePrefixMapper.class);
 
   private enum PrefixMappingFormat {
     JSON, YAML

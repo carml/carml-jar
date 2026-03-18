@@ -47,9 +47,15 @@
         <classgraph.version>4.8.177</classgraph.version>
         <lombok.version>1.18.34</lombok.version>
         <reactor.version>3.6.11</reactor.version>
-        <spring.boot.version>4.0.3</spring.boot.version>
         <picocli.version>4.7.7</picocli.version>
         <log4j.version>2.24.1</log4j.version>
+        <jackson.version>2.18.2</jackson.version>
+        <junit-jupiter.version>5.11.3</junit-jupiter.version>
+        <mockito.version>5.14.2</mockito.version>
+        <hamcrest.version>3.0</hamcrest.version>
+        <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
+        <slf4j.version>2.0.16</slf4j.version>
+        <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-io.version>2.18.0</commons-io.version>
         <system-lambda.version>1.2.1</system-lambda.version>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
@@ -70,22 +76,50 @@
                 <version>${commons-io.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-dependencies</artifactId>
-                <version>${spring.boot.version}</version>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>info.picocli</groupId>
+                <artifactId>picocli</artifactId>
+                <version>${picocli.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>info.picocli</groupId>
-                <artifactId>picocli-spring-boot-starter</artifactId>
-                <version>${picocli.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.springframework.boot</groupId>
-                        <artifactId>spring-boot-starter-logging</artifactId>
-                    </exclusion>
-                </exclusions>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${junit-jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-junit-jupiter</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest</artifactId>
+                <version>${hamcrest.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.carml</groupId>
@@ -377,17 +411,33 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-maven-plugin</artifactId>
-                    <version>${spring.boot.version}</version>
-                    <configuration>
-                        <mainClass>RdfTemplateApplication</mainClass>
-                    </configuration>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>${maven-shade-plugin.version}</version>
                     <executions>
                         <execution>
+                            <phase>package</phase>
                             <goals>
-                                <goal>repackage</goal>
+                                <goal>shade</goal>
                             </goals>
+                            <configuration>
+                                <transformers>
+                                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                        <mainClass>${shade.mainClass}</mainClass>
+                                    </transformer>
+                                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                </transformers>
+                                <filters>
+                                    <filter>
+                                        <artifact>*:*</artifact>
+                                        <excludes>
+                                            <exclude>META-INF/*.SF</exclude>
+                                            <exclude>META-INF/*.DSA</exclude>
+                                            <exclude>META-INF/*.RSA</exclude>
+                                        </excludes>
+                                    </filter>
+                                </filters>
+                            </configuration>
                         </execution>
                     </executions>
                 </plugin>

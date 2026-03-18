@@ -9,11 +9,8 @@ class JenaOutputRdfFormatProviderTest {
 
   @Test
   void givenProvider_whenRdfFormats_thenReturnRdfFormats() {
-    // Given
-    var jenaOutputRdfFormatProvider = new JenaOutputRdfFormatProvider();
-
     // When
-    var rdfFormats = jenaOutputRdfFormatProvider.rdfFormats();
+    var rdfFormats = JenaOutputRdfFormatProvider.rdfFormats();
 
     // Then
     assertThat(rdfFormats, hasItem("nq"));

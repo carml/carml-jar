@@ -26,10 +26,8 @@ import org.eclipse.rdf4j.rio.RDFWriter;
 import org.eclipse.rdf4j.rio.Rio;
 import org.eclipse.rdf4j.rio.WriterConfig;
 import org.eclipse.rdf4j.rio.helpers.BasicWriterSettings;
-import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
-@Component
 public class Rdf4jOutputHandler implements OutputHandler {
 
   private static final Set<String> STREAMING_FORMAT = Set.of(nt.name(), nq.name());

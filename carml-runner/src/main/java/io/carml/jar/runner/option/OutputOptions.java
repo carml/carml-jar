@@ -4,11 +4,9 @@ import java.nio.file.Path;
 import java.util.Optional;
 import lombok.Getter;
 import org.eclipse.rdf4j.model.IRI;
-import org.springframework.stereotype.Component;
 import picocli.CommandLine.Option;
 
 @Getter
-@Component
 public class OutputOptions {
 
   @Option(names = {"-F", "-of", "--outformat"}, completionCandidates = OutputRdfFormats.class, defaultValue = "nq",

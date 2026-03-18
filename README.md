@@ -393,22 +393,22 @@ The runnable jars will be generated in the `/carml-app/*/target` dirs.
 
 ## Customizing the mapper
 
-One way of customizing the mapper without modifying any code is via the `RmlMapperConfigurer` interface.
-
-Using Spring, it is very easy to create your own
-[Spring component](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/stereotype/Component.html)
-to configure the RmlMapper builder.
+The `RmlMapperConfigurer` interface allows customizing the `RdfRmlMapper.Builder` without modifying any code. Implementations are discovered automatically via Java's `ServiceLoader` mechanism.
 
 This can be used to add functions to the builder for example.
+
+### 1. Implement the interface
+
+Use [Google AutoService](https://github.com/google/auto/tree/main/service) to generate the `ServiceLoader` registration automatically:
 
 ```java
 package foo.bar;
 
+import com.google.auto.service.AutoService;
 import io.carml.engine.rdf.RdfRmlMapper;
 import io.carml.jar.runner.RmlMapperConfigurer;
-import org.springframework.stereotype.Component;
 
-@Component
+@AutoService(RmlMapperConfigurer.class)
 public class FunctionRmlMapperConfigurer implements RmlMapperConfigurer {
 
   @Override
@@ -418,16 +418,12 @@ public class FunctionRmlMapperConfigurer implements RmlMapperConfigurer {
 }
 ```
 
-Now you can create your own Spring application which will detect and wire the component.
-Make sure to add the package of your component to the `@ComponentScan` annotation.
+### 2. Add to classpath
 
-```java
-@SpringBootApplication
-@ComponentScan({"io.carml.jar", "foo.bar"}) // Add your component's package
-public class MyCustomizedCarmlJarApplication {
+Package your implementation as a JAR and add it to the classpath when running CARML:
 
-  public static void main(String... args) {
-    System.exit(SpringApplication.exit(SpringApplication.run(MyCustomizedCarmlJarApplication.class, args)));
-  }
-}
+```console
+java -cp "carml-rdf4j.jar:my-custom-functions.jar" io.carml.jar.app.CarmlJarRdf4jApplication map -m mapping.ttl
 ```
+
+The configurer will be discovered and applied automatically.

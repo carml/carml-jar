@@ -1,14 +1,14 @@
 package io.carml.jar.app;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.ComponentScan;
+import io.carml.jar.runner.CarmlRunner;
+import io.carml.jar.runner.option.Rdf4jOutputRdfFormatProvider;
+import io.carml.jar.runner.output.Rdf4jOutputHandler;
 
-@SpringBootApplication
-@ComponentScan("io.carml.jar")
 public class CarmlJarRdf4jApplication {
 
   public static void main(String... args) {
-    System.exit(SpringApplication.exit(SpringApplication.run(CarmlJarRdf4jApplication.class, args)));
+    var outputHandler = new Rdf4jOutputHandler();
+    var rdfFormats = Rdf4jOutputRdfFormatProvider.rdfFormats();
+    System.exit(CarmlRunner.execute(args, outputHandler, rdfFormats));
   }
 }

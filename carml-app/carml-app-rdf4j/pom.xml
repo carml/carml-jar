@@ -11,6 +11,10 @@
 
     <artifactId>carml-app-rdf4j</artifactId>
 
+    <properties>
+        <shade.mainClass>io.carml.jar.app.CarmlJarRdf4jApplication</shade.mainClass>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.carml.jar</groupId>
@@ -28,11 +32,8 @@
         <finalName>carml-jar-rdf4j-${project.version}-${carml.version}</finalName>
         <plugins>
             <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <mainClass>io.carml.jar.app.CarmlJarRdf4jApplication</mainClass>
-                </configuration>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

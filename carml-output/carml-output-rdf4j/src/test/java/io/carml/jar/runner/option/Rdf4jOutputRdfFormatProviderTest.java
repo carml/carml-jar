@@ -9,11 +9,8 @@ class Rdf4jOutputRdfFormatProviderTest {
 
   @Test
   void givenProvider_whenRdfFormats_thenReturnRdfFormats() {
-    // Given
-    var rdf4jOutputRdfFormatProvider = new Rdf4jOutputRdfFormatProvider();
-
     // When
-    var rdfFormats = rdf4jOutputRdfFormatProvider.rdfFormats();
+    var rdfFormats = Rdf4jOutputRdfFormatProvider.rdfFormats();
 
     // Then
     assertThat(rdfFormats, hasItem("nq"));

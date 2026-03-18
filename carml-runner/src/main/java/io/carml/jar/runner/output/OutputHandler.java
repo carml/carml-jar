@@ -4,10 +4,8 @@ import java.io.OutputStream;
 import java.util.Map;
 import lombok.NonNull;
 import org.eclipse.rdf4j.model.Statement;
-import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
-@Component
 public interface OutputHandler {
 
   /**

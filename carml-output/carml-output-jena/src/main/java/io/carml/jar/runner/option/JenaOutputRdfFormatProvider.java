@@ -6,14 +6,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFLanguages;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
-@Configuration
-public class JenaOutputRdfFormatProvider {
+public final class JenaOutputRdfFormatProvider {
 
-  @Bean
-  public Set<String> rdfFormats() {
+  private JenaOutputRdfFormatProvider() {}
+
+  public static Set<String> rdfFormats() {
     return RDFLanguages.getRegisteredLanguages()
         .stream()
         .map(Lang::getFileExtensions)

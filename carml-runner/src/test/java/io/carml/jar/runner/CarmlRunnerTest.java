@@ -5,13 +5,26 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.text.IsEqualCompressingWhiteSpace.equalToCompressingWhiteSpace;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.carml.jar.runner.input.Rdf4jModelLoader;
 import io.carml.jar.runner.option.LoggingOptions;
+import io.carml.jar.runner.option.OutputRdfFormats;
 import io.carml.jar.runner.output.OutputHandler;
 import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFWriterRegistry;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,34 +32,67 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import picocli.CommandLine;
+import reactor.core.publisher.Flux;
 
-@SpringBootTest(classes = {TestApplication.class})
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class CarmlRunnerTest {
 
-  @Autowired
-  private CarmlRunner carmlRunner;
-
-  @MockitoBean
-  private OutputHandler outputHandler;
+  private CommandLine commandLine;
 
   private ByteArrayOutputStream outContent;
 
   private final PrintStream originalOut = System.out;
 
   @BeforeEach
-  public void beforeEach() {
+  void setUp() {
+    // Reset log level to ERROR before each test to avoid cross-test contamination
+    resetLogLevel();
+
     outContent = new ByteArrayOutputStream();
     System.setOut(new PrintStream(outContent));
+
+    var modelLoader = new Rdf4jModelLoader();
+    var prefixMapper =
+        new io.carml.jar.runner.prefix.DefaultNamespacePrefixMapper(new ObjectMapper(), new YAMLMapper());
+    var outputHandler = new StubOutputHandler();
+    var mapCommand = new CarmlMapCommand(modelLoader, outputHandler, prefixMapper, List.of());
+
+    var rdfFormats = RDFWriterRegistry.getInstance()
+        .getKeys()
+        .stream()
+        .map(RDFFormat::getDefaultFileExtension)
+        .collect(Collectors.toCollection(LinkedHashSet::new));
+
+    commandLine = new CommandLine(new CarmlCommand(), createFactory(new OutputRdfFormats(rdfFormats)))
+        .setExecutionStrategy(LoggingOptions::executionStrategy)
+        .addSubcommand("map", mapCommand);
   }
 
   @AfterEach
-  public void afterEach() {
+  void tearDown() {
     System.setOut(originalOut);
+    resetLogLevel();
+  }
+
+  private static void resetLogLevel() {
+    LoggerContext loggerContext = LoggerContext.getContext(false);
+    LoggerConfig carmlLoggerConfig = loggerContext.getConfiguration()
+        .getLoggerConfig(LoggingOptions.CARML_LOGGER);
+    carmlLoggerConfig.setLevel(Level.ERROR);
+    loggerContext.updateLoggers();
+  }
+
+  private static CommandLine.IFactory createFactory(OutputRdfFormats outputRdfFormats) {
+    return new CommandLine.IFactory() {
+      @Override
+      public <K> K create(Class<K> cls) throws Exception {
+        if (cls.isAssignableFrom(OutputRdfFormats.class)) {
+          return cls.cast(outputRdfFormats);
+        }
+        return CommandLine.defaultFactory()
+            .create(cls);
+      }
+    };
   }
 
   @Test
@@ -55,7 +101,7 @@ class CarmlRunnerTest {
     var args = new String[] {"-h"};
 
     // When
-    carmlRunner.run(args);
+    commandLine.execute(args);
 
     // Then
     assertThat(outContent.toString(), equalToCompressingWhiteSpace("Usage:  [-hVv] [COMMAND] " //
@@ -83,8 +129,8 @@ class CarmlRunnerTest {
 
     // When
     var exitCode = catchSystemExit(() -> {
-      carmlRunner.run(args);
-      System.exit(carmlRunner.getExitCode());
+      int result = commandLine.execute(args);
+      System.exit(result);
     });
 
     // Then
@@ -110,9 +156,32 @@ class CarmlRunnerTest {
     var args = verbosity.toArray(String[]::new);
 
     // When
-    carmlRunner.run(args);
+    commandLine.execute(args);
 
     // Then
     MatcherAssert.assertThat(TestApplication.getLogLevel(LoggingOptions.CARML_LOGGER), is(logLevel));
+  }
+
+  /**
+   * Stub OutputHandler for tests that do not need real RDF output.
+   */
+  private static class StubOutputHandler implements OutputHandler {
+
+    @Override
+    public long outputPretty(Flux<Statement> statementFlux, String format, Map<String, String> namespaces,
+        OutputStream outputStream) {
+      return 1;
+    }
+
+    @Override
+    public long outputStreaming(Flux<Statement> statementFlux, String format, Map<String, String> namespaces,
+        OutputStream outputStream) {
+      return 2;
+    }
+
+    @Override
+    public boolean isFormatStreamable(String rdfFormat, boolean pretty) {
+      return !pretty;
+    }
   }
 }

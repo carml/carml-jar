@@ -1,40 +1,52 @@
 package io.carml.jar.runner;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.carml.jar.runner.input.Rdf4jModelLoader;
 import io.carml.jar.runner.option.LoggingOptions;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.ExitCodeGenerator;
-import org.springframework.stereotype.Component;
+import io.carml.jar.runner.option.OutputRdfFormats;
+import io.carml.jar.runner.output.OutputHandler;
+import io.carml.jar.runner.prefix.DefaultNamespacePrefixMapper;
+import java.util.List;
+import java.util.ServiceLoader;
+import java.util.Set;
 import picocli.CommandLine;
 
-@Component
-public class CarmlRunner implements CommandLineRunner, ExitCodeGenerator {
+public final class CarmlRunner {
 
-  private final CarmlRunnerFactory carmlRunnerFactory;
+  private CarmlRunner() {}
 
-  private final CarmlCommand carmlCommand;
+  public static int execute(String[] args, OutputHandler outputHandler, Set<String> rdfFormats) {
+    var modelLoader = new Rdf4jModelLoader();
+    var prefixMapper = new DefaultNamespacePrefixMapper(new ObjectMapper(), new YAMLMapper());
+    var configurers = loadConfigurers();
+    var outputRdfFormats = new OutputRdfFormats(rdfFormats);
+    var mapCommand = new CarmlMapCommand(modelLoader, outputHandler, prefixMapper, configurers);
 
-  private final CarmlMapCommand carmlMapCommand;
+    var commandLine = new CommandLine(new CarmlCommand(), createFactory(outputRdfFormats))
+        .setExecutionStrategy(LoggingOptions::executionStrategy)
+        .addSubcommand("map", mapCommand);
 
-  private int exitCode;
-
-  public CarmlRunner(CarmlRunnerFactory carmlRunnerFactory, CarmlCommand carmlCommand,
-      CarmlMapCommand carmlMapCommand) {
-    this.carmlRunnerFactory = carmlRunnerFactory;
-    this.carmlCommand = carmlCommand;
-    this.carmlMapCommand = carmlMapCommand;
+    return commandLine.execute(args);
   }
 
-  @Override
-  public void run(String... args) {
-    var commandLine =
-        new CommandLine(carmlCommand, carmlRunnerFactory).setExecutionStrategy(LoggingOptions::executionStrategy)
-            .addSubcommand("map", carmlMapCommand);
-
-    exitCode = commandLine.execute(args);
+  private static List<RmlMapperConfigurer> loadConfigurers() {
+    return ServiceLoader.load(RmlMapperConfigurer.class)
+        .stream()
+        .map(ServiceLoader.Provider::get)
+        .toList();
   }
 
-  @Override
-  public int getExitCode() {
-    return exitCode;
+  private static CommandLine.IFactory createFactory(OutputRdfFormats outputRdfFormats) {
+    return new CommandLine.IFactory() {
+      @Override
+      public <K> K create(Class<K> cls) throws Exception {
+        if (cls.isAssignableFrom(OutputRdfFormats.class)) {
+          return cls.cast(outputRdfFormats);
+        }
+        return CommandLine.defaultFactory()
+            .create(cls);
+      }
+    };
   }
 }

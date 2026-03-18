@@ -16,9 +16,7 @@ import org.eclipse.rdf4j.model.util.ModelCollector;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.RDFParseException;
 import org.eclipse.rdf4j.rio.Rio;
-import org.springframework.stereotype.Component;
 
-@Component
 public class Rdf4jModelLoader implements ModelLoader {
 
   /**

@@ -11,49 +11,87 @@ import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static picocli.CommandLine.ExitCode.USAGE;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.carml.jar.runner.input.Rdf4jModelLoader;
+import io.carml.jar.runner.option.LoggingOptions;
+import io.carml.jar.runner.option.OutputRdfFormats;
 import io.carml.jar.runner.output.OutputHandler;
+import io.carml.jar.runner.prefix.DefaultNamespacePrefixMapper;
 import java.io.BufferedOutputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.util.ModelCollector;
 import org.eclipse.rdf4j.model.util.Models;
+import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFWriterRegistry;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import picocli.CommandLine;
 import reactor.core.publisher.Flux;
 
-@SpringBootTest(classes = {TestApplication.class})
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ExtendWith(MockitoExtension.class)
 class CarmlMapCommandTest {
 
   private static final Path TEST_PATH = getTestSourcePath(Paths.get("carml-map-command"));
 
-  @Autowired
-  private CarmlRunner carmlRunner;
-
-  @MockitoSpyBean
   private OutputHandler outputHandler;
+
+  private CommandLine commandLine;
 
   @Captor
   private ArgumentCaptor<Flux<Statement>> statementsCaptor;
 
   @TempDir
   private Path tmpOutputDir;
+
+  @BeforeEach
+  void setUp() {
+    outputHandler = spy(new TestOutputHandler());
+    var modelLoader = new Rdf4jModelLoader();
+    var prefixMapper = new DefaultNamespacePrefixMapper(new ObjectMapper(), new YAMLMapper());
+    var mapCommand = new CarmlMapCommand(modelLoader, outputHandler, prefixMapper, List.of());
+
+    var rdfFormats = RDFWriterRegistry.getInstance()
+        .getKeys()
+        .stream()
+        .map(RDFFormat::getDefaultFileExtension)
+        .collect(Collectors.toCollection(LinkedHashSet::new));
+
+    commandLine = new CommandLine(new CarmlCommand(), createFactory(new OutputRdfFormats(rdfFormats)))
+        .setExecutionStrategy(LoggingOptions::executionStrategy)
+        .addSubcommand("map", mapCommand);
+  }
+
+  private static CommandLine.IFactory createFactory(OutputRdfFormats outputRdfFormats) {
+    return new CommandLine.IFactory() {
+      @Override
+      public <K> K create(Class<K> cls) throws Exception {
+        if (cls.isAssignableFrom(OutputRdfFormats.class)) {
+          return cls.cast(outputRdfFormats);
+        }
+        return CommandLine.defaultFactory()
+            .create(cls);
+      }
+    };
+  }
 
   @Test
   void givenMappingAndRelativeSourceLocationArgs_whenMapCommandRun_thenReturnStreamingNqOutput() {
@@ -63,7 +101,7 @@ class CarmlMapCommandTest {
     var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation};
 
     // When
-    carmlRunner.run(args);
+    commandLine.execute(args);
 
     // Then
     verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
@@ -83,7 +121,7 @@ class CarmlMapCommandTest {
     System.setIn(inputStream);
 
     // When
-    carmlRunner.run(args);
+    commandLine.execute(args);
 
     // Then
     System.setIn(stdin);
@@ -103,7 +141,7 @@ class CarmlMapCommandTest {
     var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-f", mappingFormat};
 
     // When
-    carmlRunner.run(args);
+    commandLine.execute(args);
 
     // Then
     verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
@@ -122,7 +160,7 @@ class CarmlMapCommandTest {
     var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-of", outputFormat};
 
     // When
-    carmlRunner.run(args);
+    commandLine.execute(args);
 
     // Then
     verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(ttl.name()), eq(Map.of()), eq(System.out));
@@ -143,7 +181,7 @@ class CarmlMapCommandTest {
         new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-p", prefixes, "-of", outputFormat, "-P"};
 
     // When
-    carmlRunner.run(args);
+    commandLine.execute(args);
 
     // Then
     verify(outputHandler).outputPretty(statementsCaptor.capture(), eq(ttl.name()),
@@ -165,7 +203,7 @@ class CarmlMapCommandTest {
     var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-p", prefixes, "-o", outputPath};
 
     // When
-    carmlRunner.run(args);
+    commandLine.execute(args);
 
     // Then
     verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()),
@@ -186,8 +224,8 @@ class CarmlMapCommandTest {
 
     // When
     var exitCode = catchSystemExit(() -> {
-      carmlRunner.run(args);
-      System.exit(carmlRunner.getExitCode());
+      int result = commandLine.execute(args);
+      System.exit(result);
     });
 
     // Then
@@ -203,7 +241,7 @@ class CarmlMapCommandTest {
     var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-l", limit};
 
     // When
-    carmlRunner.run(args);
+    commandLine.execute(args);
 
     // Then
     verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
@@ -222,7 +260,7 @@ class CarmlMapCommandTest {
     var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-b", baseIri};
 
     // When
-    carmlRunner.run(args);
+    commandLine.execute(args);
 
     // Then
     verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
@@ -243,7 +281,7 @@ class CarmlMapCommandTest {
     var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-E", "reactive"};
 
     // When
-    carmlRunner.run(args);
+    commandLine.execute(args);
 
     // Then
     verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
@@ -261,10 +299,33 @@ class CarmlMapCommandTest {
     var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-E", "duckdb"};
 
     // When
-    carmlRunner.run(args);
+    int exitCode = commandLine.execute(args);
 
     // Then
     verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
-    assertThat(carmlRunner.getExitCode(), is(0));
+    assertThat(exitCode, is(0));
+  }
+
+  /**
+   * Test-only OutputHandler that returns stub values.
+   */
+  private static class TestOutputHandler implements OutputHandler {
+
+    @Override
+    public long outputPretty(Flux<Statement> statementFlux, String format, Map<String, String> namespaces,
+        OutputStream outputStream) {
+      return 1;
+    }
+
+    @Override
+    public long outputStreaming(Flux<Statement> statementFlux, String format, Map<String, String> namespaces,
+        OutputStream outputStream) {
+      return 2;
+    }
+
+    @Override
+    public boolean isFormatStreamable(String rdfFormat, boolean pretty) {
+      return !pretty;
+    }
   }
 }

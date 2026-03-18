@@ -30,25 +30,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.util.ModelCollector;
 import org.eclipse.rdf4j.rio.RDFFormat;
-import org.springframework.stereotype.Component;
-import org.springframework.util.StopWatch;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
-@Component
 @Command(name = "map", sortOptions = false, sortSynopsis = false, mixinStandardHelpOptions = true)
 public class CarmlMapCommand implements Callable<Integer> {
 
-  private static final Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger(CarmlMapCommand.class);
 
   private final ModelLoader modelLoader;
 
@@ -102,8 +100,7 @@ public class CarmlMapCommand implements Callable<Integer> {
 
   @Override
   public Integer call() {
-    StopWatch stopWatch = new StopWatch();
-    stopWatch.start();
+    long startNanos = System.nanoTime();
 
     try {
       namespaces = namespacePrefixMapper.getNamespacePrefixes(prefixDeclarations, prefixMappings);
@@ -116,11 +113,11 @@ public class CarmlMapCommand implements Callable<Integer> {
     var statements = map(rmlMapper);
     var nrOfStatements = handleOutput(statements);
 
-    stopWatch.stop();
+    long elapsedNanos = System.nanoTime() - startNanos;
+    double elapsedSeconds = TimeUnit.NANOSECONDS.toMillis(elapsedNanos) / 1000.0;
     LOG.info("Finished processing.");
     LOG.info("Generated {} statements.", nrOfStatements);
-    LOG.info("Processing took: {} seconds,{}{}", stopWatch::getTotalTimeSeconds, System::lineSeparator,
-        stopWatch::prettyPrint);
+    LOG.info("Processing took: {} seconds", elapsedSeconds);
 
     return OK;
   }
@@ -205,7 +202,7 @@ public class CarmlMapCommand implements Callable<Integer> {
       try {
         Files.createDirectories(outputPath.getParent());
       } catch (IOException ioException) {
-        throw new CarmlJarException(String.format("Error creating directory %s", outputPath), ioException);
+        throw new CarmlJarException("Error creating directory %s".formatted(outputPath), ioException);
       }
     } else {
       outputPath = outputPath.resolve("output");
@@ -214,7 +211,7 @@ public class CarmlMapCommand implements Callable<Integer> {
     try (var outputStream = new BufferedOutputStream(Files.newOutputStream(outputPath))) {
       return outputRdf(statements, rdfFormat, namespaces, outputStream, pretty);
     } catch (IOException ioException) {
-      throw new CarmlJarException(String.format("Error writing to output path %s", outputPath), ioException);
+      throw new CarmlJarException("Error writing to output path %s".formatted(outputPath), ioException);
     }
   }
 

@@ -20,10 +20,8 @@ import org.apache.jena.riot.RIOT;
 import org.apache.jena.riot.system.StreamRDFWriter;
 import org.apache.jena.sparql.util.Context;
 import org.eclipse.rdf4j.model.Statement;
-import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
-@Component
 public class JenaOutputHandler implements OutputHandler {
 
   private static final Set<String> STREAMING_FORMAT = Set.of(nt.name(), nq.name());

@@ -5,14 +5,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.RDFWriterRegistry;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
-@Configuration
-public class Rdf4jOutputRdfFormatProvider {
+public final class Rdf4jOutputRdfFormatProvider {
 
-  @Bean
-  public Set<String> rdfFormats() {
+  private Rdf4jOutputRdfFormatProvider() {}
+
+  public static Set<String> rdfFormats() {
     return RDFWriterRegistry.getInstance()
         .getKeys()
         .stream()
