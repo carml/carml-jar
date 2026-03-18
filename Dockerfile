@@ -25,6 +25,9 @@ RUN microdnf install -y findutils && microdnf clean all
 ARG JAR_FILE
 COPY ${JAR_FILE} /app/app.jar
 
+# Arrow memory access requires --add-opens for Java 17+
+ENV JAVA_TOOL_OPTIONS="--add-opens=java.base/java.nio=ALL-UNNAMED"
+
 # KROWN shared data directory
 RUN mkdir -p /data/shared
 WORKDIR /data
