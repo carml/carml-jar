@@ -5,3 +5,10 @@
 # See carml-jar/krown/README.md for build instructions.
 
 FROM carml:latest
+
+# KROWN shared data directory
+RUN mkdir -p /data/shared
+
+# KROWN pattern: container stays alive, framework invokes commands via docker exec
+ENTRYPOINT []
+CMD ["tail", "-f", "/dev/null"]
