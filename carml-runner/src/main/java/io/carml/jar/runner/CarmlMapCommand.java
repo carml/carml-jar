@@ -85,10 +85,18 @@ public class CarmlMapCommand implements Callable<Integer> {
   private boolean strict;
 
   @Option(names = {"-E", "--evaluator"}, defaultValue = "auto", order = OptionOrder.EVALUATOR_ORDER,
+      converter = EvaluatorMode.Converter.class,
       description = {"Logical view evaluator mode.",
           "auto: Select best evaluator per view via ServiceLoader (default).",
-          "reactive: Force reactive evaluator for all views.", "duckdb: Force DuckDB evaluator for all views."})
+          "reactive: Force reactive evaluator for all views.",
+          "in-process-db: Force in-process database evaluator for all views."})
   private EvaluatorMode evaluatorMode;
+
+  @Option(names = {"--spill-to-disk"}, order = OptionOrder.SPILL_TO_DISK_ORDER,
+      description = {"Use an on-disk database instead of in-memory for the in-process-db evaluator.",
+          "Enables processing of larger-than-memory datasets by spilling to disk.",
+          "Only effective when evaluator mode is 'in-process-db' or 'auto'."})
+  private boolean spillToDisk;
 
   public CarmlMapCommand(ModelLoader modelLoader, OutputHandler outputHandler,
       NamespacePrefixMapper namespacePrefixMapper, List<RmlMapperConfigurer> rmlMapperConfigurers) {
@@ -109,20 +117,35 @@ public class CarmlMapCommand implements Callable<Integer> {
       return USAGE;
     }
 
-    var rmlMapper = prepareMapper();
-    var statements = map(rmlMapper);
-    var nrOfStatements = handleOutput(statements);
+    if (spillToDisk && evaluatorMode == EvaluatorMode.reactive) {
+      LOG.warn("--spill-to-disk is ignored when evaluator mode is 'reactive'");
+    }
 
-    long elapsedNanos = System.nanoTime() - startNanos;
-    double elapsedSeconds = TimeUnit.NANOSECONDS.toMillis(elapsedNanos) / 1000.0;
-    LOG.info("Finished processing.");
-    LOG.info("Generated {} statements.", nrOfStatements);
-    LOG.info("Processing took: {} seconds", elapsedSeconds);
+    var duckDbFactory = createDuckDbFactory();
 
-    return OK;
+    try (duckDbFactory) {
+      var rmlMapper = prepareMapper(duckDbFactory);
+      var statements = map(rmlMapper);
+      var nrOfStatements = handleOutput(statements);
+
+      long elapsedNanos = System.nanoTime() - startNanos;
+      double elapsedSeconds = TimeUnit.NANOSECONDS.toMillis(elapsedNanos) / 1000.0;
+      LOG.info("Finished processing.");
+      LOG.info("Generated {} statements.", nrOfStatements);
+      LOG.info("Processing took: {} seconds", elapsedSeconds);
+
+      return OK;
+    }
   }
 
-  private RdfRmlMapper prepareMapper() {
+  private DuckDbLogicalViewEvaluatorFactory createDuckDbFactory() {
+    if (evaluatorMode != EvaluatorMode.reactive && (evaluatorMode == EvaluatorMode.in_process_db || spillToDisk)) {
+      return spillToDisk ? DuckDbLogicalViewEvaluatorFactory.createOnDisk() : new DuckDbLogicalViewEvaluatorFactory();
+    }
+    return null;
+  }
+
+  private RdfRmlMapper prepareMapper(DuckDbLogicalViewEvaluatorFactory duckDbFactory) {
     var mapping = loadMapping();
 
     if (LOG.isDebugEnabled()) {
@@ -156,8 +179,8 @@ public class CarmlMapCommand implements Callable<Integer> {
 
     if (evaluatorMode == EvaluatorMode.reactive) {
       mapperBuilder.logicalViewEvaluatorFactory(new DefaultLogicalViewEvaluatorFactory());
-    } else if (evaluatorMode == EvaluatorMode.duckdb) {
-      mapperBuilder.logicalViewEvaluatorFactory(new DuckDbLogicalViewEvaluatorFactory());
+    } else if (duckDbFactory != null) {
+      mapperBuilder.logicalViewEvaluatorFactory(duckDbFactory);
     }
 
     rmlMapperConfigurers.forEach(rmlMapperConfigurer -> rmlMapperConfigurer.configureMapper(mapperBuilder));

@@ -107,7 +107,14 @@ Usage:  map [-hVPSv] [-E=<evaluatorMode>] [-F=<outputRdfFormat>]
                              auto: Select best evaluator per view via
                                ServiceLoader (default).
                              reactive: Force reactive evaluator for all views.
-                             duckdb: Force DuckDB evaluator for all views.
+                             in-process-db: Force in-process database evaluator for
+                               all views.
+      --spill-to-disk        Use an on-disk database instead of in-memory for
+                               the in-process-db evaluator.
+                             Enables processing of larger-than-memory datasets
+                               by spilling to disk.
+                             Only effective when evaluator mode is
+                               'in-process-db' or 'auto'.
 ```
 
 For example, the following command:
@@ -289,7 +296,14 @@ Usage:  map [-hVPSv] [-E=<evaluatorMode>] [-F=<outputRdfFormat>]
                              auto: Select best evaluator per view via
                                ServiceLoader (default).
                              reactive: Force reactive evaluator for all views.
-                             duckdb: Force DuckDB evaluator for all views.
+                             in-process-db: Force in-process database evaluator for
+                               all views.
+      --spill-to-disk        Use an on-disk database instead of in-memory for
+                               the in-process-db evaluator.
+                             Enables processing of larger-than-memory datasets
+                               by spilling to disk.
+                             Only effective when evaluator mode is
+                               'in-process-db' or 'auto'.
 ```
 
 ## CARML jar Jena output
@@ -378,7 +392,14 @@ Usage:  map [-hVPSv] [-E=<evaluatorMode>] [-F=<outputRdfFormat>]
                              auto: Select best evaluator per view via
                                ServiceLoader (default).
                              reactive: Force reactive evaluator for all views.
-                             duckdb: Force DuckDB evaluator for all views.
+                             in-process-db: Force in-process database evaluator for
+                               all views.
+      --spill-to-disk        Use an on-disk database instead of in-memory for
+                               the in-process-db evaluator.
+                             Enables processing of larger-than-memory datasets
+                               by spilling to disk.
+                             Only effective when evaluator mode is
+                               'in-process-db' or 'auto'.
 ```
 
 ## Building the project

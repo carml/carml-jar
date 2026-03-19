@@ -9,9 +9,9 @@
 #   docker run -v /path/to/data:/data carml map -m /data/mapping.ttl -F nt
 #
 # Evaluator selection:
-#   -E auto       Best evaluator per view (default)
-#   -E duckdb     Force DuckDB for all views
-#   -E reactive   Force reactive for all views
+#   -E auto          Best evaluator per view (default)
+#   -E in-process-db   Force in-process database evaluator for all views
+#   -E reactive      Force reactive evaluator for all views
 
 FROM ghcr.io/graalvm/jdk-community:17
 

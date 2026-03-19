@@ -39,7 +39,7 @@ Run benchmarks with different evaluators by passing `-E`:
 | Variant | Flag | Description |
 |---------|------|-------------|
 | Auto | `-E auto` | Best evaluator per view (default) |
-| DuckDB | `-E duckdb` | Force DuckDB SQL evaluator |
+| In-Process DB | `-E in-process-db` | Force in-process database evaluator |
 | Reactive | `-E reactive` | Force reactive evaluator |
 
 ### Running KROWN scenarios
@@ -93,9 +93,9 @@ cat > /tmp/mapping.ttl << 'EOF'
     rml:objectMap [ rml:constant ex:Item ] ] .
 EOF
 
-# Run with DuckDB evaluator
+# Run with in-process-db evaluator
 time docker run --rm -v /tmp:/data carml \
-  java -jar /app/app.jar map -m /data/mapping.ttl -r /data -F nt -E duckdb > /dev/null
+  java -jar /app/app.jar map -m /data/mapping.ttl -r /data -F nt -E in-process-db > /dev/null
 
 # Run with reactive evaluator
 time docker run --rm -v /tmp:/data carml \

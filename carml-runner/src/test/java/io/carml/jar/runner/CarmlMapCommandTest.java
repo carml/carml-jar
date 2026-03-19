@@ -292,16 +292,62 @@ class CarmlMapCommandTest {
   }
 
   @Test
-  void givenDuckdbEvaluatorArg_whenMapCommandRun_thenReturnStreamingNqOutput() {
+  void givenInProcessDbEvaluatorArg_whenMapCommandRun_thenReturnStreamingNqOutput() {
     // Given
     var mapping = getStringForPath(TEST_PATH, "mapping", "mapping.rml.ttl");
     var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
-    var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-E", "duckdb"};
+    var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-E", "in-process-db"};
 
     // When
     int exitCode = commandLine.execute(args);
 
     // Then
+    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
+    assertThat(exitCode, is(0));
+  }
+
+  @Test
+  void givenSpillToDiskArg_whenMapCommandRun_thenReturnStreamingNqOutput() {
+    // Given
+    var mapping = getStringForPath(TEST_PATH, "mapping", "mapping.rml.ttl");
+    var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
+    var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "--spill-to-disk"};
+
+    // When
+    int exitCode = commandLine.execute(args);
+
+    // Then
+    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
+    assertThat(exitCode, is(0));
+  }
+
+  @Test
+  void givenInProcessDbEvaluatorAndSpillToDiskArgs_whenMapCommandRun_thenReturnStreamingNqOutput() {
+    // Given
+    var mapping = getStringForPath(TEST_PATH, "mapping", "mapping.rml.ttl");
+    var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
+    var args =
+        new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-E", "in-process-db", "--spill-to-disk"};
+
+    // When
+    int exitCode = commandLine.execute(args);
+
+    // Then
+    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
+    assertThat(exitCode, is(0));
+  }
+
+  @Test
+  void givenStreamEvaluatorAndSpillToDiskArg_whenMapCommandRun_thenSpillToDiskArgIgnored() {
+    // Given
+    var mapping = getStringForPath(TEST_PATH, "mapping", "mapping.rml.ttl");
+    var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
+    var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-E", "reactive", "--spill-to-disk"};
+
+    // When
+    int exitCode = commandLine.execute(args);
+
+    // Then - flag is silently ignored; reactive evaluator runs successfully
     verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
     assertThat(exitCode, is(0));
   }
