@@ -31,4 +31,6 @@ public final class OptionOrder {
   public static final int EVALUATOR_ORDER = 130;
 
   public static final int SPILL_TO_DISK_ORDER = 140;
+
+  public static final int METRICS_ORDER = 150;
 }

@@ -3,6 +3,7 @@ package io.carml.jar.runner;
 import static picocli.CommandLine.ExitCode.OK;
 import static picocli.CommandLine.ExitCode.USAGE;
 
+import io.carml.engine.LoggingObserver;
 import io.carml.engine.rdf.RdfRmlMapper;
 import io.carml.jar.runner.input.ModelLoader;
 import io.carml.jar.runner.option.EvaluatorMode;
@@ -15,6 +16,11 @@ import io.carml.jar.runner.prefix.NamespacePrefixMapper;
 import io.carml.jar.runner.prefix.PrefixMappingException;
 import io.carml.logicalview.DefaultLogicalViewEvaluatorFactory;
 import io.carml.logicalview.duckdb.DuckDbLogicalViewEvaluatorFactory;
+import io.carml.observability.MetricsObserver;
+import io.carml.observability.PrometheusMetricsServer;
+import io.carml.observability.PrometheusPushgateway;
+import io.micrometer.prometheusmetrics.PrometheusConfig;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import io.carml.model.Resource;
 import io.carml.model.TriplesMap;
 import io.carml.util.ModelSerializer;
@@ -26,6 +32,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -98,6 +105,15 @@ public class CarmlMapCommand implements Callable<Integer> {
           "Only effective when evaluator mode is 'in-process-db' or 'auto'."})
   private boolean spillToDisk;
 
+  @Option(names = {"--metrics"}, order = OptionOrder.METRICS_ORDER, arity = "0..1",
+      fallbackValue = "localhost:9091",
+      description = {"Push execution metrics to a Prometheus Pushgateway after mapping completes.",
+          "Optionally specify host:port (default: localhost:9091).",
+          "Also starts a Prometheus scrape endpoint on port 9092 for real-time monitoring.",
+          "Metrics include statement counts, durations, iteration counts per TriplesMap.",
+          "Start the monitoring stack with: docker compose -f docker/docker-compose.yml up -d"})
+  private String metricsEndpoint;
+
   public CarmlMapCommand(ModelLoader modelLoader, OutputHandler outputHandler,
       NamespacePrefixMapper namespacePrefixMapper, List<RmlMapperConfigurer> rmlMapperConfigurers) {
     this.modelLoader = modelLoader;
@@ -121,10 +137,23 @@ public class CarmlMapCommand implements Callable<Integer> {
       LOG.warn("--spill-to-disk is ignored when evaluator mode is 'reactive'");
     }
 
+    PrometheusMeterRegistry metricsRegistry = null;
+    MetricsObserver metricsObserver = null;
+    PrometheusMetricsServer metricsServer = null;
+    if (metricsEndpoint != null) {
+      metricsRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+      metricsObserver = MetricsObserver.create(metricsRegistry);
+      try {
+        metricsServer = PrometheusMetricsServer.start(metricsRegistry, 9092);
+      } catch (IOException e) {
+        LOG.warn("Could not start metrics server on port 9092: {}", e.getMessage());
+      }
+    }
+
     var duckDbFactory = createDuckDbFactory();
 
     try (duckDbFactory) {
-      var rmlMapper = prepareMapper(duckDbFactory);
+      var rmlMapper = prepareMapper(duckDbFactory, metricsObserver);
       var statements = map(rmlMapper);
       var nrOfStatements = handleOutput(statements);
 
@@ -134,7 +163,20 @@ public class CarmlMapCommand implements Callable<Integer> {
       LOG.info("Generated {} statements.", nrOfStatements);
       LOG.info("Processing took: {} seconds", elapsedSeconds);
 
+      if (metricsRegistry != null) {
+        var labels = new LinkedHashMap<String, String>();
+        labels.put("evaluator", evaluatorMode.name());
+        mappingFileOptions.getGroup().getMappingFiles().stream()
+            .findFirst()
+            .ifPresent(p -> labels.put("mapping", p.getFileName().toString()));
+        PrometheusPushgateway.push(metricsRegistry, metricsEndpoint, "carml", labels);
+      }
+
       return OK;
+    } finally {
+      if (metricsServer != null) {
+        metricsServer.stop();
+      }
     }
   }
 
@@ -145,7 +187,7 @@ public class CarmlMapCommand implements Callable<Integer> {
     return null;
   }
 
-  private RdfRmlMapper prepareMapper(DuckDbLogicalViewEvaluatorFactory duckDbFactory) {
+  private RdfRmlMapper prepareMapper(DuckDbLogicalViewEvaluatorFactory duckDbFactory, MetricsObserver metricsObserver) {
     var mapping = loadMapping();
 
     if (LOG.isDebugEnabled()) {
@@ -181,6 +223,11 @@ public class CarmlMapCommand implements Callable<Integer> {
       mapperBuilder.logicalViewEvaluatorFactory(new DefaultLogicalViewEvaluatorFactory());
     } else if (duckDbFactory != null) {
       mapperBuilder.logicalViewEvaluatorFactory(duckDbFactory);
+    }
+
+    mapperBuilder.observer(LoggingObserver.create());
+    if (metricsObserver != null) {
+      mapperBuilder.observer(metricsObserver);
     }
 
     rmlMapperConfigurers.forEach(rmlMapperConfigurer -> rmlMapperConfigurer.configureMapper(mapperBuilder));

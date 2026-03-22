@@ -14,6 +14,7 @@
 - [Usage](#usage)
 - [CARML jar RDF4J](#carml-jar-rdf4j-output)
 - [CARML jar Jena](#carml-jar-jena-output)
+- [Monitoring](#monitoring)
 - [Building the project](#building-the-project)
 - [Customizing the mapper](#customizing-the-mapper)
 
@@ -34,7 +35,8 @@ This project produces two artifacts:
 Usage:  map [-hVPSv] [-E=<evaluatorMode>] [-F=<outputRdfFormat>]
             [-o=<outputPath>] [-M=<prefixMappings>]...
             [-p=<prefixDeclarations>[,<prefixDeclarations>...]]...
-            [-b=<baseIri>] [-l=<limit>] (-m=<mappingFiles>
+            [-b=<baseIri>] [-l=<limit>] [--spill-to-disk]
+            [--metrics[=<metricsEndpoint>]] (-m=<mappingFiles>
             [-m=<mappingFiles>]... [-f=<mappingFileRdfFormat>]
             [-r=<relativeSourceLocation>])
   -h, --help                 Show this help message and exit.
@@ -115,6 +117,15 @@ Usage:  map [-hVPSv] [-E=<evaluatorMode>] [-F=<outputRdfFormat>]
                                by spilling to disk.
                              Only effective when evaluator mode is
                                'in-process-db' or 'auto'.
+      --metrics[=<metricsEndpoint>]
+                             Push execution metrics to a Prometheus Pushgateway
+                               after mapping completes.
+                             Optionally specify host:port (default: localhost:
+                               9091).
+                             Also starts a Prometheus scrape endpoint on port
+                               9092 for real-time monitoring.
+                             Start the monitoring stack with: docker compose -f
+                               docker/docker-compose.yml up -d
 ```
 
 For example, the following command:
@@ -223,7 +234,8 @@ See the `map` help-description for details:
 Usage:  map [-hVPSv] [-E=<evaluatorMode>] [-F=<outputRdfFormat>]
             [-o=<outputPath>] [-M=<prefixMappings>]...
             [-p=<prefixDeclarations>[,<prefixDeclarations>...]]...
-            [-b=<baseIri>] [-l=<limit>] (-m=<mappingFiles>
+            [-b=<baseIri>] [-l=<limit>] [--spill-to-disk]
+            [--metrics[=<metricsEndpoint>]] (-m=<mappingFiles>
             [-m=<mappingFiles>]... [-f=<mappingFileRdfFormat>]
             [-r=<relativeSourceLocation>])
   -h, --help                 Show this help message and exit.
@@ -304,6 +316,15 @@ Usage:  map [-hVPSv] [-E=<evaluatorMode>] [-F=<outputRdfFormat>]
                                by spilling to disk.
                              Only effective when evaluator mode is
                                'in-process-db' or 'auto'.
+      --metrics[=<metricsEndpoint>]
+                             Push execution metrics to a Prometheus Pushgateway
+                               after mapping completes.
+                             Optionally specify host:port (default: localhost:
+                               9091).
+                             Also starts a Prometheus scrape endpoint on port
+                               9092 for real-time monitoring.
+                             Start the monitoring stack with: docker compose -f
+                               docker/docker-compose.yml up -d
 ```
 
 ## CARML jar Jena output
@@ -318,7 +339,8 @@ See the `map` help-description for details:
 Usage:  map [-hVPSv] [-E=<evaluatorMode>] [-F=<outputRdfFormat>]
             [-o=<outputPath>] [-M=<prefixMappings>]...
             [-p=<prefixDeclarations>[,<prefixDeclarations>...]]...
-            [-b=<baseIri>] [-l=<limit>] (-m=<mappingFiles>
+            [-b=<baseIri>] [-l=<limit>] [--spill-to-disk]
+            [--metrics[=<metricsEndpoint>]] (-m=<mappingFiles>
             [-m=<mappingFiles>]... [-f=<mappingFileRdfFormat>]
             [-r=<relativeSourceLocation>])
   -h, --help                 Show this help message and exit.
@@ -400,7 +422,62 @@ Usage:  map [-hVPSv] [-E=<evaluatorMode>] [-F=<outputRdfFormat>]
                                by spilling to disk.
                              Only effective when evaluator mode is
                                'in-process-db' or 'auto'.
+      --metrics[=<metricsEndpoint>]
+                             Push execution metrics to a Prometheus Pushgateway
+                               after mapping completes.
+                             Optionally specify host:port (default: localhost:
+                               9091).
+                             Also starts a Prometheus scrape endpoint on port
+                               9092 for real-time monitoring.
+                             Start the monitoring stack with: docker compose -f
+                               docker/docker-compose.yml up -d
 ```
+
+## Monitoring
+
+CARML includes a Prometheus + Grafana monitoring stack for real-time execution monitoring.
+
+### Setup
+
+```console
+# Start monitoring stack (from project root)
+cd docker
+docker compose up -d
+```
+
+Open the Grafana dashboard at http://localhost:3000/d/carml-mapping (login: admin / carml, or anonymous access).
+
+### Run with metrics
+
+```console
+java -jar carml-jar-X.jar map -m mapping.ttl -rsl input -F nt -o output.nt --metrics
+```
+
+The `--metrics` flag:
+- Starts a Prometheus scrape endpoint on `localhost:9092` for real-time time-series monitoring (throughput, iterations/sec)
+- Pushes final metrics to the Pushgateway at `localhost:9091` on completion (totals, durations, distributions)
+
+To push to a custom Pushgateway endpoint:
+
+```console
+java -jar carml-jar-X.jar map -m mapping.ttl -rsl input -F nt --metrics myhost:9091
+```
+
+### Published metrics
+
+| Metric | Type | Tags |
+|---|---|---|
+| `carml.statements.generated` | Counter | `triples_map` |
+| `carml.statements.total` | Counter | -- |
+| `carml.iterations.processed` | Counter | `triples_map`, `evaluator` |
+| `carml.iterations.deduplicated` | Counter | `triples_map` |
+| `carml.errors` | Counter | `triples_map` |
+| `carml.mapping.duration` | Timer | `triples_map` |
+| `carml.mapping.completed` | Counter | `triples_map`, `reason` |
+| `carml.mapping.statements` | DistributionSummary | `triples_map` |
+| `carml.view.evaluation.duration` | Timer | `view`, `evaluator` |
+| `carml.view.evaluation.iterations` | DistributionSummary | `view`, `evaluator` |
+| `carml.mappings.active` | Gauge | -- |
 
 ## Building the project
 
