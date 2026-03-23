@@ -136,7 +136,6 @@ public class CarmlMapCommand implements Callable<Integer> {
     if (spillToDisk && evaluatorMode == EvaluatorMode.reactive) {
       LOG.warn("--spill-to-disk is ignored when evaluator mode is 'reactive'");
     }
-
     PrometheusMeterRegistry metricsRegistry = null;
     MetricsObserver metricsObserver = null;
     PrometheusMetricsServer metricsServer = null;
