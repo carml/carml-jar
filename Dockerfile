@@ -13,12 +13,15 @@
 #   -E reactive        Force reactive evaluator for all views
 #
 # Spill-to-disk (for larger-than-memory datasets):
-#   The --spill-to-disk flag writes the DuckDB database to a temporary directory inside
-#   the container. To avoid filling up the container's writable layer, mount a host
-#   directory or Docker volume to /duckdb-tmp:
+#   The --spill-to-disk flag stores the DuckDB database and temporary spill files in
+#   /duckdb-tmp inside the container. Mount a host directory or Docker volume there to
+#   avoid filling the container's writable layer:
 #
 #   docker run -v /path/to/data:/data -v /tmp/duckdb:/duckdb-tmp \
 #     carml map --spill-to-disk -m /data/mapping.ttl -F nt
+#
+#   DuckDB automatically halves its memory budget and adjusts thread count to fit
+#   within the container's memory limit. Minimum 512 MB container memory recommended.
 #
 # GC tuning:
 #   The default GC is G1GC, which is optimal for the DuckDB evaluator (Arrow batch
@@ -40,10 +43,10 @@ COPY ${JAR_FILE} /app/app.jar
 # Arrow memory access requires --add-opens for Java 17+
 ENV JAVA_TOOL_OPTIONS="--add-opens=java.base/java.nio=ALL-UNNAMED"
 
-# Spill-to-disk directory for DuckDB temp storage.
-# Mount a host directory or Docker volume here when using --spill-to-disk.
+# Spill-to-disk directory for DuckDB database and temp files.
+# DuckDB's temp_directory is set to this path when --spill-to-disk is used.
+# Mount a host directory or Docker volume here for larger-than-memory datasets.
 RUN mkdir -p /duckdb-tmp
-ENV TMPDIR="/duckdb-tmp"
 
 # Generate CDS archive for faster startup
 RUN java -XX:ArchiveClassesAtExit=/app/carml.jsa -jar /app/app.jar map --help > /dev/null 2>&1 || true

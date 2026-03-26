@@ -103,10 +103,20 @@ public class CarmlMapCommand implements Callable<Integer> {
   @Option(names = {"--spill-to-disk"}, order = OptionOrder.SPILL_TO_DISK_ORDER,
       description = {"Use an on-disk database instead of in-memory for the in-process-db evaluator.",
           "Enables processing of larger-than-memory datasets by spilling to disk.",
+          "Memory and threads are auto-tuned. Minimum 512 MB system/container memory recommended.",
           "Only effective when evaluator mode is 'in-process-db' or 'auto'.",
-          "When running in Docker, mount a volume to /duckdb-tmp to avoid filling the container layer:",
+          "In Docker, mount a volume to /duckdb-tmp for database and spill files:",
           "  docker run -v /tmp/duckdb:/duckdb-tmp carml map --spill-to-disk -m mapping.ttl"})
   private boolean spillToDisk;
+
+  private static final java.util.regex.Pattern MEMORY_LIMIT_PATTERN = java.util.regex.Pattern
+      .compile("^\\d+(\\.\\d+)?\\s*(B|KB|KiB|MB|MiB|GB|GiB|TB|TiB)$", java.util.regex.Pattern.CASE_INSENSITIVE);
+
+  @Option(names = {"--in-process-db-memory"}, order = OptionOrder.DUCKDB_MEMORY_ORDER,
+      description = {"Memory limit for the in-process database (e.g. '4GB', '512MB').",
+          "Overrides the auto-tuned value. Only effective with --spill-to-disk.",
+          "Default: system memory minus JVM heap minus 512 MB overhead."})
+  private String inProcessDbMemory;
 
   @Option(names = {"--metrics"}, order = OptionOrder.METRICS_ORDER, arity = "0..1", fallbackValue = "localhost:9091",
       description = {"Push execution metrics to a Prometheus Pushgateway after mapping completes.",
@@ -137,6 +147,9 @@ public class CarmlMapCommand implements Callable<Integer> {
 
     if (spillToDisk && evaluatorMode == EvaluatorMode.reactive) {
       LOG.warn("--spill-to-disk is ignored when evaluator mode is 'reactive'");
+    }
+    if (inProcessDbMemory != null && !spillToDisk) {
+      LOG.warn("--in-process-db-memory is ignored when --spill-to-disk is not set");
     }
     PrometheusMeterRegistry metricsRegistry = null;
     MetricsObserver metricsObserver = null;
@@ -188,9 +201,15 @@ public class CarmlMapCommand implements Callable<Integer> {
     if (evaluatorMode == EvaluatorMode.reactive) {
       return null;
     }
+    if (inProcessDbMemory != null && !MEMORY_LIMIT_PATTERN.matcher(inProcessDbMemory)
+        .matches()) {
+      throw new CarmlJarException(
+          "Invalid --in-process-db-memory value: '%s'. Expected format: <number><unit> (e.g. '4GB', '512MB')"
+              .formatted(inProcessDbMemory));
+    }
     var virtualThreadScheduler =
         Schedulers.fromExecutorService(Executors.newVirtualThreadPerTaskExecutor(), "duckdb-vt");
-    return spillToDisk ? DuckDbLogicalViewEvaluatorFactory.createOnDisk(virtualThreadScheduler)
+    return spillToDisk ? DuckDbLogicalViewEvaluatorFactory.createOnDisk(virtualThreadScheduler, inProcessDbMemory)
         : new DuckDbLogicalViewEvaluatorFactory(virtualThreadScheduler);
   }
 

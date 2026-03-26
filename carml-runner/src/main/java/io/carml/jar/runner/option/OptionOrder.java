@@ -32,5 +32,7 @@ public final class OptionOrder {
 
   public static final int SPILL_TO_DISK_ORDER = 140;
 
+  public static final int DUCKDB_MEMORY_ORDER = 145;
+
   public static final int METRICS_ORDER = 150;
 }
