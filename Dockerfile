@@ -51,6 +51,10 @@ RUN mkdir -p /duckdb-tmp
 # Generate CDS archive for faster startup
 RUN java -XX:ArchiveClassesAtExit=/app/carml.jsa -jar /app/app.jar map --help > /dev/null 2>&1 || true
 
+# Run as non-root to avoid creating root-owned files in mounted volumes.
+RUN mkdir -p /data && chown 1000:1000 /duckdb-tmp /data
+USER 1000
+
 WORKDIR /data
 
 ENTRYPOINT ["java", "-XX:SharedArchiveFile=/app/carml.jsa", "-jar", "/app/app.jar"]
