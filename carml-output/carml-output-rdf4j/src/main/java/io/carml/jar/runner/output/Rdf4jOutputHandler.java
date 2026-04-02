@@ -2,7 +2,6 @@ package io.carml.jar.runner.output;
 
 import static io.carml.jar.runner.format.Rdf4JFormats.determineRdfFormat;
 import static io.carml.jar.runner.format.RdfFormat.n3;
-import static io.carml.jar.runner.format.RdfFormat.nq;
 import static io.carml.jar.runner.format.RdfFormat.nt;
 import static io.carml.jar.runner.format.RdfFormat.trig;
 import static io.carml.jar.runner.format.RdfFormat.trigs;
@@ -30,7 +29,7 @@ import reactor.core.publisher.Flux;
 
 public class Rdf4jOutputHandler implements OutputHandler {
 
-  private static final Set<String> STREAMING_FORMAT = Set.of(nt.name(), nq.name());
+  private static final Set<String> STREAMING_FORMAT = BYTE_STREAMING_FORMATS;
 
   private static final Set<String> POTENTIALLY_STREAMING_FORMAT =
       Set.of(ttl.name(), ttls.name(), trig.name(), trigs.name(), n3.name(), trix.name());

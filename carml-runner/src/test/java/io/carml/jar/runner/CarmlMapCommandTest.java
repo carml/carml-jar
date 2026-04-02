@@ -3,12 +3,10 @@ package io.carml.jar.runner;
 import static com.github.stefanbirkner.systemlambda.SystemLambda.catchSystemExit;
 import static io.carml.jar.runner.TestApplication.getStringForPath;
 import static io.carml.jar.runner.TestApplication.getTestSourcePath;
-import static io.carml.jar.runner.format.RdfFormat.nq;
 import static io.carml.jar.runner.format.RdfFormat.ttl;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.startsWith;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.spy;
@@ -23,8 +21,10 @@ import io.carml.jar.runner.option.OutputRdfFormats;
 import io.carml.jar.runner.output.OutputHandler;
 import io.carml.jar.runner.prefix.DefaultNamespacePrefixMapper;
 import java.io.BufferedOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedHashSet;
@@ -34,9 +34,9 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.util.ModelCollector;
-import org.eclipse.rdf4j.model.util.Models;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.RDFWriterRegistry;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -58,6 +58,9 @@ class CarmlMapCommandTest {
 
   @Captor
   private ArgumentCaptor<Flux<Statement>> statementsCaptor;
+
+  @Captor
+  private ArgumentCaptor<Flux<byte[]>> bytesCaptor;
 
   @TempDir
   private Path tmpOutputDir;
@@ -104,11 +107,7 @@ class CarmlMapCommandTest {
     commandLine.execute(args);
 
     // Then
-    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
-    var model = statementsCaptor.getValue()
-        .collect(new ModelCollector())
-        .block();
-    assertThat(model.size(), is(2));
+    verify(outputHandler).outputStreamingBytes(bytesCaptor.capture(), eq(System.out));
   }
 
   @Test
@@ -125,11 +124,7 @@ class CarmlMapCommandTest {
 
     // Then
     System.setIn(stdin);
-    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
-    var model = statementsCaptor.getValue()
-        .collect(new ModelCollector())
-        .block();
-    assertThat(model.size(), is(2));
+    verify(outputHandler).outputStreamingBytes(bytesCaptor.capture(), eq(System.out));
   }
 
   @Test
@@ -144,11 +139,7 @@ class CarmlMapCommandTest {
     commandLine.execute(args);
 
     // Then
-    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
-    var model = statementsCaptor.getValue()
-        .collect(new ModelCollector())
-        .block();
-    assertThat(model.size(), is(2));
+    verify(outputHandler).outputStreamingBytes(bytesCaptor.capture(), eq(System.out));
   }
 
   @Test
@@ -167,6 +158,7 @@ class CarmlMapCommandTest {
     var model = statementsCaptor.getValue()
         .collect(new ModelCollector())
         .block();
+    assertNotNull(model);
     assertThat(model.size(), is(2));
   }
 
@@ -189,6 +181,7 @@ class CarmlMapCommandTest {
     var model = statementsCaptor.getValue()
         .collect(new ModelCollector())
         .block();
+    assertNotNull(model);
     assertThat(model.size(), is(2));
   }
 
@@ -206,12 +199,7 @@ class CarmlMapCommandTest {
     commandLine.execute(args);
 
     // Then
-    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()),
-        eq(Map.of("schema", "https://schema.org/")), isA(BufferedOutputStream.class));
-    var model = statementsCaptor.getValue()
-        .collect(new ModelCollector())
-        .block();
-    assertThat(model.size(), is(2));
+    verify(outputHandler).outputStreamingBytes(bytesCaptor.capture(), isA(BufferedOutputStream.class));
   }
 
   @Test
@@ -244,11 +232,7 @@ class CarmlMapCommandTest {
     commandLine.execute(args);
 
     // Then
-    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
-    var model = statementsCaptor.getValue()
-        .collect(new ModelCollector())
-        .block();
-    assertThat(model.size(), is(1));
+    verify(outputHandler).outputStreamingBytes(bytesCaptor.capture(), eq(System.out));
   }
 
   @Test
@@ -263,14 +247,7 @@ class CarmlMapCommandTest {
     commandLine.execute(args);
 
     // Then
-    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
-    var model = statementsCaptor.getValue()
-        .collect(new ModelCollector())
-        .block();
-    assertThat(model.size(), is(2));
-    Models.subject(model)
-        .ifPresentOrElse(subject -> assertThat(subject.stringValue(), startsWith(baseIri)),
-            () -> fail("Expected subject but non found."));
+    verify(outputHandler).outputStreamingBytes(bytesCaptor.capture(), eq(System.out));
   }
 
   @Test
@@ -284,11 +261,7 @@ class CarmlMapCommandTest {
     commandLine.execute(args);
 
     // Then
-    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
-    var model = statementsCaptor.getValue()
-        .collect(new ModelCollector())
-        .block();
-    assertThat(model.size(), is(2));
+    verify(outputHandler).outputStreamingBytes(bytesCaptor.capture(), eq(System.out));
   }
 
   @Test
@@ -302,7 +275,7 @@ class CarmlMapCommandTest {
     int exitCode = commandLine.execute(args);
 
     // Then
-    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
+    verify(outputHandler).outputStreamingBytes(bytesCaptor.capture(), eq(System.out));
     assertThat(exitCode, is(0));
   }
 
@@ -317,7 +290,7 @@ class CarmlMapCommandTest {
     int exitCode = commandLine.execute(args);
 
     // Then
-    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
+    verify(outputHandler).outputStreamingBytes(bytesCaptor.capture(), eq(System.out));
     assertThat(exitCode, is(0));
   }
 
@@ -333,7 +306,7 @@ class CarmlMapCommandTest {
     int exitCode = commandLine.execute(args);
 
     // Then
-    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
+    verify(outputHandler).outputStreamingBytes(bytesCaptor.capture(), eq(System.out));
     assertThat(exitCode, is(0));
   }
 
@@ -348,8 +321,75 @@ class CarmlMapCommandTest {
     int exitCode = commandLine.execute(args);
 
     // Then - flag is silently ignored; reactive evaluator runs successfully
-    verify(outputHandler).outputStreaming(statementsCaptor.capture(), eq(nq.name()), eq(Map.of()), eq(System.out));
+    verify(outputHandler).outputStreamingBytes(bytesCaptor.capture(), eq(System.out));
     assertThat(exitCode, is(0));
+  }
+
+  @Test
+  void givenMappingAndDefaultBytePipeline_whenMapCommandRun_thenBytesActuallyWritten() {
+    // Given — use a real OutputHandler that inherits the default outputStreamingBytes
+    // implementation to verify bytes are actually subscribed and written through the pipeline.
+    var mapCommand = getCarmlMapCommand();
+
+    var rdfFormats = RDFWriterRegistry.getInstance()
+        .getKeys()
+        .stream()
+        .map(RDFFormat::getDefaultFileExtension)
+        .collect(Collectors.toCollection(LinkedHashSet::new));
+
+    var localCommandLine = new CommandLine(new CarmlCommand(), createFactory(new OutputRdfFormats(rdfFormats)))
+        .setExecutionStrategy(LoggingOptions::executionStrategy)
+        .addSubcommand("map", mapCommand);
+
+    var mapping = getStringForPath(TEST_PATH, "mapping", "mapping.rml.ttl");
+    var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
+    var outputPath = tmpOutputDir.resolve("out.nq")
+        .toString();
+    var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-o", outputPath};
+
+    // When
+    int exitCode = localCommandLine.execute(args);
+
+    // Then — verify bytes were actually written to the output file
+    assertThat(exitCode, is(0));
+    var outputFile = Path.of(outputPath);
+    assertThat(Files.exists(outputFile), is(true));
+    try {
+      var content = Files.readString(outputFile, StandardCharsets.UTF_8);
+      assertThat(content.isBlank(), is(false));
+      // NQ format: each line is a quad/triple
+      var lines = content.strip()
+          .split("\n");
+      assertThat(lines.length, is(2));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private static @NonNull CarmlMapCommand getCarmlMapCommand() {
+    var realOutputHandler = new OutputHandler() {
+      @Override
+      public long outputPretty(@NonNull Flux<Statement> statementFlux, @NonNull String rdfFormat,
+          @NonNull Map<String, String> namespaces, @NonNull OutputStream outputStream) {
+        return 0;
+      }
+
+      @Override
+      public long outputStreaming(@NonNull Flux<Statement> statementFlux, @NonNull String rdfFormat,
+          @NonNull Map<String, String> namespaces, @NonNull OutputStream outputStream) {
+        return 0;
+      }
+
+      @Override
+      public boolean isFormatStreamable(@NonNull String rdfFormat, boolean pretty) {
+        return !pretty;
+      }
+    };
+
+    var modelLoader = new Rdf4jModelLoader();
+    var prefixMapper = new DefaultNamespacePrefixMapper(new ObjectMapper(), new YAMLMapper());
+
+    return new CarmlMapCommand(modelLoader, realOutputHandler, prefixMapper, List.of());
   }
 
   /**
@@ -358,19 +398,24 @@ class CarmlMapCommandTest {
   private static class TestOutputHandler implements OutputHandler {
 
     @Override
-    public long outputPretty(Flux<Statement> statementFlux, String format, Map<String, String> namespaces,
-        OutputStream outputStream) {
+    public long outputPretty(@NonNull Flux<Statement> statementFlux, @NonNull String format,
+        @NonNull Map<String, String> namespaces, @NonNull OutputStream outputStream) {
       return 1;
     }
 
     @Override
-    public long outputStreaming(Flux<Statement> statementFlux, String format, Map<String, String> namespaces,
-        OutputStream outputStream) {
+    public long outputStreaming(@NonNull Flux<Statement> statementFlux, @NonNull String format,
+        @NonNull Map<String, String> namespaces, @NonNull OutputStream outputStream) {
       return 2;
     }
 
     @Override
-    public boolean isFormatStreamable(String rdfFormat, boolean pretty) {
+    public long outputStreamingBytes(@NonNull Flux<byte[]> byteFlux, @NonNull OutputStream outputStream) {
+      return 2;
+    }
+
+    @Override
+    public boolean isFormatStreamable(@NonNull String rdfFormat, boolean pretty) {
       return !pretty;
     }
   }

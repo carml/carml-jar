@@ -2,7 +2,6 @@ package io.carml.jar.runner.output;
 
 import static io.carml.jar.runner.format.JenaLangs.determineLang;
 import static io.carml.jar.runner.format.JenaLangs.supportsGraphs;
-import static io.carml.jar.runner.format.RdfFormat.nq;
 import static io.carml.jar.runner.format.RdfFormat.nt;
 import static io.carml.util.jena.JenaCollectors.toDatasetGraph;
 
@@ -24,7 +23,7 @@ import reactor.core.publisher.Flux;
 
 public class JenaOutputHandler implements OutputHandler {
 
-  private static final Set<String> STREAMING_FORMAT = Set.of(nt.name(), nq.name());
+  private static final Set<String> STREAMING_FORMAT = BYTE_STREAMING_FORMATS;
 
   /**
    * Write a {@link Flux} of {@link Statement}s to the provided {@link OutputStream} as RDF in the

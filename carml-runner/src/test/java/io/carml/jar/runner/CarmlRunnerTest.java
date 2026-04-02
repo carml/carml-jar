@@ -26,6 +26,7 @@ import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.RDFWriterRegistry;
 import org.hamcrest.MatcherAssert;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -168,20 +169,25 @@ class CarmlRunnerTest {
   private static class StubOutputHandler implements OutputHandler {
 
     @Override
-    public long outputPretty(Flux<Statement> statementFlux, String format, Map<String, String> namespaces,
-        OutputStream outputStream) {
+    public long outputPretty(@NonNull Flux<Statement> statementFlux, @NonNull String format,
+        @NonNull Map<String, String> namespaces, @NonNull OutputStream outputStream) {
       return 1;
     }
 
     @Override
-    public long outputStreaming(Flux<Statement> statementFlux, String format, Map<String, String> namespaces,
-        OutputStream outputStream) {
+    public long outputStreaming(@NonNull Flux<Statement> statementFlux, @NonNull String format,
+        @NonNull Map<String, String> namespaces, @NonNull OutputStream outputStream) {
       return 2;
     }
 
     @Override
-    public boolean isFormatStreamable(String rdfFormat, boolean pretty) {
+    public boolean isFormatStreamable(@NonNull String rdfFormat, boolean pretty) {
       return !pretty;
+    }
+
+    @Override
+    public long outputStreamingBytes(@NonNull Flux<byte[]> byteFlux, @NonNull OutputStream outputStream) {
+      return 2;
     }
   }
 }

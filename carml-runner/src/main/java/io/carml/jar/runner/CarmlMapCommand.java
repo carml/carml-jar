@@ -168,8 +168,7 @@ public class CarmlMapCommand implements Callable<Integer> {
 
     try (duckDbFactory) {
       var rmlMapper = prepareMapper(duckDbFactory, metricsObserver);
-      var statements = map(rmlMapper);
-      var nrOfStatements = handleOutput(statements);
+      var nrOfStatements = useBytesPipeline() ? handleByteOutput(rmlMapper) : handleOutput(map(rmlMapper));
 
       long elapsedNanos = System.nanoTime() - startNanos;
       double elapsedSeconds = TimeUnit.NANOSECONDS.toMillis(elapsedNanos) / 1000.0;
@@ -279,6 +278,52 @@ public class CarmlMapCommand implements Callable<Integer> {
         .load(mappingModel);
   }
 
+  private boolean useBytesPipeline() {
+    var format = outputOptions.getOutputRdfFormat();
+    return OutputHandler.BYTE_STREAMING_FORMATS.contains(format) && !outputOptions.isPretty();
+  }
+
+  private long handleByteOutput(RdfRmlMapper rmlMapper) {
+    var format = outputOptions.getOutputRdfFormat();
+    var bytes = "nq".equals(format) ? rmlMapper.mapToNQuadsBytes() : rmlMapper.mapToNTriplesBytes();
+
+    var limitedBytes = outputOptions.getLimit()
+        .map(bytes::take)
+        .orElse(bytes);
+
+    return outputOptions.getOutputPath()
+        .map(outputPath -> outputBytesWithPath(outputPath, limitedBytes))
+        .orElseGet(() -> outputBytesWithoutPath(limitedBytes));
+  }
+
+  private static Path resolveOutputPath(Path outputPath) {
+    if (Files.isDirectory(outputPath)) {
+      outputPath = outputPath.resolve("output");
+    }
+    try {
+      Files.createDirectories(outputPath.getParent());
+    } catch (IOException e) {
+      throw new CarmlJarException("Error creating directory %s".formatted(outputPath), e);
+    }
+    return outputPath;
+  }
+
+  private long outputBytesWithPath(Path outputPath, Flux<byte[]> bytes) {
+    var resolvedPath = resolveOutputPath(outputPath);
+    LOG.info("Writing output to {} ...", resolvedPath);
+    try (var outputStream = new BufferedOutputStream(Files.newOutputStream(resolvedPath))) {
+      return outputHandler.outputStreamingBytes(bytes, outputStream);
+    } catch (IOException e) {
+      throw new CarmlJarException("Error writing to output path %s".formatted(resolvedPath), e);
+    }
+  }
+
+  @SuppressWarnings("java:S106")
+  private long outputBytesWithoutPath(Flux<byte[]> bytes) {
+    LOG.info("No output file specified. Outputting to console ...{}", System::lineSeparator);
+    return outputHandler.outputStreamingBytes(bytes, System.out);
+  }
+
   private Flux<Statement> map(RdfRmlMapper rmlMapper) {
     return rmlMapper.map(System.in);
   }
@@ -297,20 +342,12 @@ public class CarmlMapCommand implements Callable<Integer> {
   }
 
   private long outputWithPath(Path outputPath, Flux<Statement> statements, String rdfFormat, boolean pretty) {
-    if (!Files.isDirectory(outputPath)) {
-      try {
-        Files.createDirectories(outputPath.getParent());
-      } catch (IOException ioException) {
-        throw new CarmlJarException("Error creating directory %s".formatted(outputPath), ioException);
-      }
-    } else {
-      outputPath = outputPath.resolve("output");
-    }
-    LOG.info("Writing output to {} ...", outputPath);
-    try (var outputStream = new BufferedOutputStream(Files.newOutputStream(outputPath))) {
+    var resolvedPath = resolveOutputPath(outputPath);
+    LOG.info("Writing output to {} ...", resolvedPath);
+    try (var outputStream = new BufferedOutputStream(Files.newOutputStream(resolvedPath))) {
       return outputRdf(statements, rdfFormat, namespaces, outputStream, pretty);
     } catch (IOException ioException) {
-      throw new CarmlJarException("Error writing to output path %s".formatted(outputPath), ioException);
+      throw new CarmlJarException("Error writing to output path %s".formatted(resolvedPath), ioException);
     }
   }
 
