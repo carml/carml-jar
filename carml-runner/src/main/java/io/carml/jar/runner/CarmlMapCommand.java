@@ -51,7 +51,8 @@ import picocli.CommandLine.Option;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
-@Command(name = "map", sortOptions = false, sortSynopsis = false, mixinStandardHelpOptions = true)
+@Command(name = "map", sortOptions = false, sortSynopsis = false, mixinStandardHelpOptions = true,
+    description = "Execute an RML mapping.")
 public class CarmlMapCommand implements Callable<Integer> {
 
   private static final Logger LOG = LogManager.getLogger(CarmlMapCommand.class);

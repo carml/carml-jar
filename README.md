@@ -12,6 +12,7 @@
 
 - [Introduction](#introduction)
 - [Usage](#usage)
+- [Plan command](#plan-command)
 - [CARML jar RDF4J](#carml-jar-rdf4j-output)
 - [CARML jar Jena](#carml-jar-jena-output)
 - [Monitoring](#monitoring)
@@ -222,6 +223,51 @@ This makes it possible to pipe input into a mapping process. For example:
 
 ```console
 cat some/input | java -jar carml-jar-X.jar map -m rml/mapping.ttl
+```
+
+## Plan command
+
+The `plan` command analyzes a mapping and recommends the optimal execution strategy without executing it. It inspects source types, join patterns, and structural annotations to determine which evaluator (`reactive` or `in-process-db`) is best suited for each TriplesMap.
+
+### When to use
+
+Use `plan` before running large or complex mappings to:
+- Understand which evaluator will be used for each TriplesMap
+- Determine whether `--spill-to-disk` is needed
+- Get a ready-to-use `carml map` command with the recommended options
+
+### Usage
+
+```console
+carml plan -m mapping.ttl [-rsl ./data] [--source-rows name=count] [-i]
+```
+
+Options:
+- `-m`, `--mapping` — Mapping file path(s), same as for `map`
+- `-r`, `-rsl` — Relative source location, same as for `map`
+- `--source-iterations name=count` — Pre-supply estimated iteration counts (repeatable). An iteration is one logical iteration: a row in CSV/SQL, a matched object in JSON, or a matched element in XML. The `name` matches the source file name shown in the plan output.
+- `-i`, `--interactive` — Prompt for iteration counts for sources where estimates are missing
+
+### How it works
+
+The plan command:
+
+1. **Loads and resolves** the mapping (same as `map` does at startup)
+2. **Analyzes** each TriplesMap's source type, join pattern, and structural annotations
+3. **Recommends** an evaluator per TriplesMap based on:
+   - **Not in-process-db compatible** (XML, streams) → `reactive`
+   - **Has joins, any source unknown or >100K rows** → `in-process-db` (SQL join pushdown prevents OOM)
+   - **Has joins, all sources ≤100K rows** → `reactive` (in-memory join store is fine)
+   - **No joins, >100K rows** → `in-process-db` (scales better for large data)
+   - **No joins, ≤100K rows or unknown** → `reactive` (lower overhead)
+4. **Generates** a recommended `carml map` command with the appropriate flags
+
+### Pre-supplying row counts
+
+For non-interactive use (e.g., CI pipelines), provide row counts via `--source-rows`:
+
+```console
+carml plan -m mapping.ttl --source-iterations source-file-1.csv=12950390 --source-iterations source-file2.json=47206
 ```
 
 ## CARML jar RDF4J output

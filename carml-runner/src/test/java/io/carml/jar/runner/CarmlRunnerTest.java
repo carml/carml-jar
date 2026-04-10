@@ -64,9 +64,12 @@ class CarmlRunnerTest {
         .map(RDFFormat::getDefaultFileExtension)
         .collect(Collectors.toCollection(LinkedHashSet::new));
 
+    var planCommand = new CarmlPlanCommand(modelLoader);
+
     commandLine = new CommandLine(new CarmlCommand(), createFactory(new OutputRdfFormats(rdfFormats)))
         .setExecutionStrategy(LoggingOptions::executionStrategy)
-        .addSubcommand("map", mapCommand);
+        .addSubcommand("map", mapCommand)
+        .addSubcommand("plan", planCommand);
   }
 
   @AfterEach
@@ -111,7 +114,8 @@ class CarmlRunnerTest {
         + "  -v, --verbose   Specify multiple -v or --verbose options to increase verbosity. " //
         + "                  For example `-v -v`, or `-vv` or `--verbose --verbose` " //
         + "Commands: " //
-        + "  map "));
+        + "  map   Execute an RML mapping. " //
+        + "  plan  Analyze a mapping and recommend the optimal execution strategy. "));
   }
 
   static Stream<Arguments> exitCodeTestArguments() {

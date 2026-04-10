@@ -22,10 +22,12 @@ public final class CarmlRunner {
     var configurers = loadConfigurers();
     var outputRdfFormats = new OutputRdfFormats(rdfFormats);
     var mapCommand = new CarmlMapCommand(modelLoader, outputHandler, prefixMapper, configurers);
+    var planCommand = new CarmlPlanCommand(modelLoader);
 
     var commandLine = new CommandLine(new CarmlCommand(), createFactory(outputRdfFormats))
         .setExecutionStrategy(LoggingOptions::executionStrategy)
-        .addSubcommand("map", mapCommand);
+        .addSubcommand("map", mapCommand)
+        .addSubcommand("plan", planCommand);
 
     return commandLine.execute(args);
   }
