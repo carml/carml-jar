@@ -46,8 +46,27 @@ public interface OutputHandler {
       @NonNull Map<String, String> namespaces, @NonNull OutputStream outputStream);
 
   /**
-   * Determines whether the RDF format reference is streamable taking into account the value of
+   * Determines whether the given RDF format reference is streamable taking into account the value of
    * {@code pretty}.
+   *
+   * <p>
+   * Returns {@code true} if and only if a registered {@link io.carml.output.RdfSerializerProvider}
+   * supports the combination {@code (rdfFormat, STREAMING)}. Returns {@code false} in the following
+   * cases:
+   * <ul>
+   * <li>{@code pretty} is {@code true}: pretty output always buffers via a model serializer and is
+   * therefore never streaming.</li>
+   * <li>{@code rdfFormat} is not recognized by any registered provider.</li>
+   * <li>No registered provider supports the format in {@link io.carml.output.SerializerMode#STREAMING
+   * STREAMING} mode (for example, block-structured Jena-only formats such as RDF/XML, JSON-LD and N3,
+   * or formats like TriX / BinaryRDF for which Rio exposes only pretty/full-model writers).</li>
+   * </ul>
+   *
+   * <p>
+   * Callers should treat a {@code false} result as a signal to fall through to pretty-mode output.
+   * The actual write will fail fast with {@link IllegalArgumentException} (thrown by
+   * {@link io.carml.output.RdfSerializerFactory#selectProvider(String, io.carml.output.SerializerMode)})
+   * if no registered provider supports the requested format in any mode.
    *
    * @param rdfFormat The RDF format reference.
    * @param pretty The {@code boolean} value.
