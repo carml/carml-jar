@@ -5,21 +5,36 @@ import static io.carml.jar.runner.TestApplication.getStringForPath;
 import static io.carml.jar.runner.TestApplication.getTestSourcePath;
 import static io.carml.jar.runner.format.RdfFormat.ttl;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 import static picocli.CommandLine.ExitCode.USAGE;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.carml.engine.target.TargetWriter;
+import io.carml.engine.target.TargetWriterFactory;
 import io.carml.jar.runner.input.Rdf4jModelLoader;
 import io.carml.jar.runner.option.LoggingOptions;
 import io.carml.jar.runner.option.OutputRdfFormats;
 import io.carml.jar.runner.output.OutputHandler;
 import io.carml.jar.runner.prefix.DefaultNamespacePrefixMapper;
+import io.carml.model.FilePath;
+import io.carml.model.LogicalTarget;
+import io.carml.model.Target;
+import io.carml.model.impl.CarmlLogicalSource;
+import io.carml.model.impl.CarmlLogicalTarget;
+import io.carml.model.impl.CarmlSubjectMap;
+import io.carml.model.impl.CarmlTarget;
+import io.carml.model.impl.CarmlTriplesMap;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -30,9 +45,11 @@ import java.nio.file.Paths;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.util.ModelCollector;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.RDFWriterRegistry;
@@ -363,6 +380,115 @@ class CarmlMapCommandTest {
       assertThat(lines.length, is(2));
     } catch (IOException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  @Test
+  void givenMappingWithLogicalTarget_whenCollectLogicalTargets_thenUnionReturned() {
+    // Given — collectLogicalTargets walks all term maps on the TriplesMap set and returns the
+    // union of their declared rml:logicalTargets. Using an in-memory CARML model (bypassing
+    // RmlMappingLoader) so we can assert the routing happens independently of the end-to-end
+    // mapping-document parse path, which currently does not bind rml:FilePath as a rml:target
+    // (model-layer gap tracked separately for Task 7.12).
+    var target = CarmlTarget.builder()
+        .serialization(SimpleValueFactory.getInstance()
+            .createIRI("http://www.w3.org/ns/formats/N-Quads"))
+        .build();
+    var logicalTarget = CarmlLogicalTarget.builder()
+        .target(target)
+        .build();
+    var subjectMap = CarmlSubjectMap.builder()
+        .reference("id")
+        .logicalTargets(Set.of(logicalTarget))
+        .build();
+
+    var triplesMap = CarmlTriplesMap.builder()
+        .logicalSource(CarmlLogicalSource.builder()
+            .build())
+        .subjectMap(subjectMap)
+        .build();
+
+    // When
+    var collected = CarmlMapCommand.collectLogicalTargets(Set.of(triplesMap));
+
+    // Then
+    assertThat(collected, is(Set.of(logicalTarget)));
+  }
+
+  @Test
+  void givenMappingWithoutLogicalTarget_whenCollectLogicalTargets_thenReturnsEmpty() {
+    // Given — a mapping without any rml:logicalTarget declarations.
+    var subjectMap = CarmlSubjectMap.builder()
+        .reference("id")
+        .build();
+
+    var triplesMap = CarmlTriplesMap.builder()
+        .logicalSource(CarmlLogicalSource.builder()
+            .build())
+        .subjectMap(subjectMap)
+        .build();
+
+    // When
+    var collected = CarmlMapCommand.collectLogicalTargets(Set.of(triplesMap));
+
+    // Then — the CLI falls back to the existing unrouted path when this set is empty.
+    assertThat(collected.isEmpty(), is(true));
+  }
+
+  @Test
+  void buildTargetRouter_withFilePathTarget_returnsRouter() {
+    // Given - a LogicalTarget whose Target also implements FilePath. The `target instanceof
+    // FilePath` branch in buildTargetRouter binds it to a file writer via the factory. Use
+    // Mockito with extraInterfaces because the production model has no concrete class that
+    // implements both Target and FilePath today (model-layer gap tracked in Task 7.12).
+    var serialization = SimpleValueFactory.getInstance()
+        .createIRI("http://www.w3.org/ns/formats/N-Quads");
+    var fileTarget = mock(Target.class, withSettings().extraInterfaces(FilePath.class));
+    when(fileTarget.getSerialization()).thenReturn(serialization);
+    when(((FilePath) fileTarget).getPath()).thenReturn(tmpOutputDir.resolve("routed.nq")
+        .toString());
+    var logicalTarget = mock(LogicalTarget.class);
+    when(logicalTarget.getTarget()).thenReturn(fileTarget);
+
+    var targetWriterFactory = TargetWriterFactory.builder()
+        .build();
+    var defaultWriter = mock(TargetWriter.class);
+
+    // When
+    try (var router = CarmlMapCommand.buildTargetRouter(Set.of(logicalTarget), targetWriterFactory, defaultWriter)) {
+
+      // Then - one registered file writer + the supplied default writer.
+      assertThat(router.getTargetWriterCount(), is(2));
+      assertThat(router.getLogicalTargets(), is(Set.of(logicalTarget)));
+      assertThat(router.hasDefaultWriter(), is(true));
+    }
+  }
+
+  @Test
+  void buildTargetRouter_withNonFilePathTarget_throwsUnsupportedOperationException() {
+    // Given - a Target that is NOT a FilePath. The buildTargetRouter must reject it because
+    // routing to non-file targets (SPARQL endpoints, etc.) is out of scope for Task 7.11. The
+    // exception message must include the target class name and a hint pointing at the file an
+    // issue path so users have an actionable diagnostic.
+    var nonFileTarget = mock(Target.class);
+    var logicalTarget = mock(LogicalTarget.class);
+    when(logicalTarget.getTarget()).thenReturn(nonFileTarget);
+    when(logicalTarget.getResourceName()).thenReturn(":sparqlTarget");
+
+    var targetWriterFactory = TargetWriterFactory.builder()
+        .build();
+    var logicalTargets = Set.of(logicalTarget);
+
+    // When / Then
+    try (var defaultWriter = mock(TargetWriter.class)) {
+      var thrown = assertThrows(UnsupportedOperationException.class,
+          () -> CarmlMapCommand.buildTargetRouter(logicalTargets, targetWriterFactory, defaultWriter));
+
+      // The message includes the target class simple name (Mockito-generated mock subclass name
+      // contains "Target") and the GitHub-issue hint.
+      assertThat(thrown.getMessage(), containsString(nonFileTarget.getClass()
+          .getSimpleName()));
+      assertThat(thrown.getMessage(), containsString("file an issue"));
     }
   }
 
