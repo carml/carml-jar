@@ -1,5 +1,6 @@
 package io.carml.jar.runner;
 
+import static java.util.stream.Collectors.toUnmodifiableMap;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static picocli.CommandLine.ExitCode.OK;
 import static picocli.CommandLine.ExitCode.USAGE;
@@ -42,7 +43,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,9 +91,11 @@ public class CarmlMapCommand implements Callable<Integer> {
   @Mixin
   private LoggingOptions loggingOptions;
 
+  @SuppressWarnings("unused")
   @Mixin
   private MappingFileOptions mappingFileOptions;
 
+  @SuppressWarnings("unused")
   @Mixin
   private OutputOptions outputOptions;
 
@@ -110,10 +112,12 @@ public class CarmlMapCommand implements Callable<Integer> {
       "Multiple declarations can be separated by ','. For example: ex=http://example.com/,foo,bar"})
   private final List<String> prefixDeclarations = new ArrayList<>();
 
+  @SuppressWarnings("unused")
   @Option(names = {"-S", "--strict"}, order = OptionOrder.STRICT_ORDER, description = {"Enable strict mode.",
       "Raises an error if a reference expression never produces a value across all records of a logical source."})
   private boolean strict;
 
+  @SuppressWarnings("unused")
   @Option(names = {"-E", "--evaluator"}, defaultValue = "auto", order = OptionOrder.EVALUATOR_ORDER,
       converter = EvaluatorMode.Converter.class,
       description = {"Logical view evaluator mode.",
@@ -122,6 +126,7 @@ public class CarmlMapCommand implements Callable<Integer> {
           "in-process-db: Force in-process database evaluator for all views."})
   private EvaluatorMode evaluatorMode;
 
+  @SuppressWarnings("unused")
   @Option(names = {"--spill-to-disk"}, order = OptionOrder.SPILL_TO_DISK_ORDER,
       description = {"Use an on-disk database instead of in-memory for the in-process-db evaluator.",
           "Enables processing of larger-than-memory datasets by spilling to disk.",
@@ -134,12 +139,14 @@ public class CarmlMapCommand implements Callable<Integer> {
   private static final java.util.regex.Pattern MEMORY_LIMIT_PATTERN = java.util.regex.Pattern
       .compile("^\\d+(\\.\\d+)?\\s*(B|KB|KiB|MB|MiB|GB|GiB|TB|TiB)$", java.util.regex.Pattern.CASE_INSENSITIVE);
 
+  @SuppressWarnings("unused")
   @Option(names = {"--in-process-db-memory"}, order = OptionOrder.DUCKDB_MEMORY_ORDER,
       description = {"Memory limit for the in-process database (e.g. '4GB', '512MB').",
           "Overrides the auto-tuned value. Only effective with --spill-to-disk.",
           "Default: system memory minus JVM heap minus 512 MB overhead."})
   private String inProcessDbMemory;
 
+  @SuppressWarnings("unused")
   @Option(names = {"--metrics"}, order = OptionOrder.METRICS_ORDER, arity = "0..1", fallbackValue = "localhost:9091",
       description = {"Push execution metrics to a Prometheus Pushgateway after mapping completes.",
           "Optionally specify host:port (default: localhost:9091).",
@@ -508,8 +515,7 @@ public class CarmlMapCommand implements Callable<Integer> {
    * Constructs a {@link TargetRouter} from the declared {@link LogicalTarget}s. File-based targets
    * ({@link FilePath}) are bound to {@link FileTargetWriter} instances via
    * {@link TargetWriterFactory}. Non-file target types are rejected with
-   * {@link UnsupportedOperationException} because routing to SPARQL endpoints or other sinks is out
-   * of scope for Task 7.11.
+   * {@link UnsupportedOperationException}; only file-based sinks are supported today.
    *
    * <p>
    * Visibility: package-private to permit direct unit testing of the routing-construction logic
@@ -517,23 +523,40 @@ public class CarmlMapCommand implements Callable<Integer> {
    */
   static TargetRouter buildTargetRouter(Set<LogicalTarget> logicalTargets, TargetWriterFactory targetWriterFactory,
       TargetWriter defaultWriter) {
-    var writers = new HashMap<LogicalTarget, TargetWriter>();
-    for (var logicalTarget : logicalTargets) {
-      Target target = logicalTarget.getTarget();
-      if (target instanceof FilePath filePath) {
-        writers.put(logicalTarget, targetWriterFactory.createFileWriter(filePath, target.getSerialization()));
-      } else {
-        // Concatenation must be wrapped before .formatted() — otherwise .formatted() applies only
-        // to the last string literal and the placeholders in the earlier fragments are lost.
-        var targetTypeName = target == null ? "null"
-            : target.getClass()
-                .getSimpleName();
-        throw new UnsupportedOperationException(("Unsupported rml:target type for rml:logicalTarget <%s>: %s."
-            + " Only file-based targets (rml:FilePath) are supported in this release — please file"
-            + " an issue if you need another target type.").formatted(logicalTarget.getResourceName(), targetTypeName));
-      }
-    }
+    var writers = logicalTargets.stream()
+        .collect(toUnmodifiableMap(lt -> lt, lt -> buildWriterForLogicalTarget(lt, targetWriterFactory)));
     return new TargetRouter(writers, defaultWriter);
+  }
+
+  /**
+   * Resolves a single {@link LogicalTarget} to its {@link TargetWriter}. Throws
+   * {@link UnsupportedOperationException} for non-file-based target types; called from the stream
+   * collector in {@link #buildTargetRouter} so the exception propagates out naturally.
+   */
+  private static TargetWriter buildWriterForLogicalTarget(LogicalTarget logicalTarget,
+      TargetWriterFactory targetWriterFactory) {
+    Target target = logicalTarget.getTarget();
+    if (target instanceof FilePath filePath) {
+      // RML-IO precedence: serialization/encoding/compression live primarily on rml:LogicalTarget.
+      // encoding/compression are declared on both Source and Target and unify on CarmlFilePath,
+      // serialization is Target-only and returns null on CarmlFilePath, so target.getSerialization()
+      // fallback is a no-op for bare file-path targets but fires for combined-typed
+      // `a rml:Target, rml:FilePath` nodes where the nested Target carries its own serialization.
+      var serialization =
+          logicalTarget.getSerialization() != null ? logicalTarget.getSerialization() : target.getSerialization();
+      var encoding = logicalTarget.getEncoding() != null ? logicalTarget.getEncoding() : target.getEncoding();
+      var compression =
+          logicalTarget.getCompression() != null ? logicalTarget.getCompression() : target.getCompression();
+      return targetWriterFactory.createFileWriter(filePath, serialization, encoding, compression);
+    }
+    // Concatenation must be wrapped before .formatted() — otherwise .formatted() applies only to
+    // the last string literal and the placeholders in the earlier fragments are lost.
+    var targetTypeName = target == null ? "null"
+        : target.getClass()
+            .getSimpleName();
+    throw new UnsupportedOperationException(("Unsupported rml:target type for rml:logicalTarget <%s>: %s."
+        + " Only file-based targets (rml:FilePath) are supported in this release — please file"
+        + " an issue if you need another target type.").formatted(logicalTarget.getResourceName(), targetTypeName));
   }
 
   /**
@@ -561,7 +584,7 @@ public class CarmlMapCommand implements Callable<Integer> {
         .orElse(statements);
 
     var observedCount = new AtomicLong();
-    // publishOn shifts the observedCount++ and blockLast to boundedElastic;
+    // publishOn shifts the observedCount++ and blockLast to boundedElastic,
     // observer firing (and writer.write()) already happened upstream on the engine's scheduler.
     limited.publishOn(Schedulers.boundedElastic())
         .doOnNext(statement -> observedCount.incrementAndGet())

@@ -11,7 +11,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -387,9 +389,8 @@ class CarmlMapCommandTest {
   void givenMappingWithLogicalTarget_whenCollectLogicalTargets_thenUnionReturned() {
     // Given — collectLogicalTargets walks all term maps on the TriplesMap set and returns the
     // union of their declared rml:logicalTargets. Using an in-memory CARML model (bypassing
-    // RmlMappingLoader) so we can assert the routing happens independently of the end-to-end
-    // mapping-document parse path, which currently does not bind rml:FilePath as a rml:target
-    // (model-layer gap tracked separately for Task 7.12).
+    // RmlMappingLoader) so this test asserts the routing-collection invariant in isolation
+    // from the mapping-document parse path.
     var target = CarmlTarget.builder()
         .serialization(SimpleValueFactory.getInstance()
             .createIRI("http://www.w3.org/ns/formats/N-Quads"))
@@ -438,9 +439,10 @@ class CarmlMapCommandTest {
   @Test
   void buildTargetRouter_withFilePathTarget_returnsRouter() {
     // Given - a LogicalTarget whose Target also implements FilePath. The `target instanceof
-    // FilePath` branch in buildTargetRouter binds it to a file writer via the factory. Use
-    // Mockito with extraInterfaces because the production model has no concrete class that
-    // implements both Target and FilePath today (model-layer gap tracked in Task 7.12).
+    // FilePath` branch in buildTargetRouter binds it to a file writer via the factory. Mockito
+    // with extraInterfaces decouples this test from the model-layer wiring (CarmlFilePath is
+    // the production combined-type class today), keeping the unit test focused on the
+    // routing-construction branching rather than model internals.
     var serialization = SimpleValueFactory.getInstance()
         .createIRI("http://www.w3.org/ns/formats/N-Quads");
     var fileTarget = mock(Target.class, withSettings().extraInterfaces(FilePath.class));
@@ -461,6 +463,169 @@ class CarmlMapCommandTest {
       assertThat(router.getTargetWriterCount(), is(2));
       assertThat(router.getLogicalTargets(), is(Set.of(logicalTarget)));
       assertThat(router.hasDefaultWriter(), is(true));
+    }
+  }
+
+  @Test
+  @SuppressWarnings("resource")
+  void buildTargetRouter_withLogicalTargetLevelProperties_overridesTargetLevelProperties() {
+    // Given - a LogicalTarget that declares its own serialization/encoding/compression. Per
+    // RML-IO precedence, LogicalTarget-level values win over the nested Target equivalents. The
+    // factory is a spy so we can observe which values it received at the four-arg entry point
+    // without running actual I/O. Target-level getters are NOT stubbed: with all three LT-level
+    // values non-null, the precedence rule short-circuits before touching them.
+    var vf = SimpleValueFactory.getInstance();
+    var ltSerialization = vf.createIRI("http://www.w3.org/ns/formats/N-Triples");
+    var ltEncoding = vf.createIRI("http://w3id.org/rml/UTF-16");
+    var ltCompression = vf.createIRI("http://w3id.org/rml/gzip");
+
+    var fileTarget = mock(Target.class, withSettings().extraInterfaces(FilePath.class));
+
+    var logicalTarget = mock(LogicalTarget.class);
+    when(logicalTarget.getTarget()).thenReturn(fileTarget);
+    when(logicalTarget.getSerialization()).thenReturn(ltSerialization);
+    when(logicalTarget.getEncoding()).thenReturn(ltEncoding);
+    when(logicalTarget.getCompression()).thenReturn(ltCompression);
+
+    var factory = spy(TargetWriterFactory.builder()
+        .build());
+    var stubbedWriter = mock(TargetWriter.class);
+    // doReturn is required over when(factory.method()).thenReturn — the latter would invoke the
+    // real createFileWriter during stub setup, which then resolves the non-null FilePath path
+    // against the filesystem.
+    doReturn(stubbedWriter).when(factory)
+        .createFileWriter(isA(FilePath.class), eq(ltSerialization), eq(ltEncoding), eq(ltCompression));
+    var defaultWriter = mock(TargetWriter.class);
+
+    // When
+    try (var router = CarmlMapCommand.buildTargetRouter(Set.of(logicalTarget), factory, defaultWriter)) {
+      assertThat(router.getLogicalTargets(), is(Set.of(logicalTarget)));
+    }
+
+    // Then - the factory received the LogicalTarget-level values; Target-level values MUST NOT
+    // have leaked through.
+    verify(factory).createFileWriter(isA(FilePath.class), eq(ltSerialization), eq(ltEncoding), eq(ltCompression));
+    // Pin the short-circuit contract: with all three LogicalTarget-level values non-null, the
+    // routing logic must not consult any target-level getter.
+    verify(fileTarget, never()).getSerialization();
+    verify(fileTarget, never()).getEncoding();
+    verify(fileTarget, never()).getCompression();
+  }
+
+  @Test
+  @SuppressWarnings("resource")
+  void buildTargetRouter_withTargetLevelPropertiesOnly_usesTargetLevelProperties() {
+    // Given - a LogicalTarget with null serialization/encoding/compression; the FilePath-typed
+    // Target carries them. Per the LogicalTarget-over-Target precedence rule, the Target-level
+    // values flow through unchanged.
+    var vf = SimpleValueFactory.getInstance();
+    var tgtSerialization = vf.createIRI("http://www.w3.org/ns/formats/N-Quads");
+    var tgtEncoding = vf.createIRI("http://w3id.org/rml/UTF-8");
+    var tgtCompression = vf.createIRI("http://w3id.org/rml/gzip");
+
+    var fileTarget = mock(Target.class, withSettings().extraInterfaces(FilePath.class));
+    when(fileTarget.getSerialization()).thenReturn(tgtSerialization);
+    when(fileTarget.getEncoding()).thenReturn(tgtEncoding);
+    when(fileTarget.getCompression()).thenReturn(tgtCompression);
+    // No stub on FilePath.getPath — the spy short-circuits createFileWriter before path
+    // resolution runs.
+
+    var logicalTarget = mock(LogicalTarget.class);
+    when(logicalTarget.getTarget()).thenReturn(fileTarget);
+    // LogicalTarget getters return null by default on an un-stubbed mock, so no when(...) calls
+    // are needed here; stubbing them explicitly would trigger UnnecessaryStubbing under Mockito's
+    // strict mode.
+
+    var factory = spy(TargetWriterFactory.builder()
+        .build());
+    var stubbedWriter = mock(TargetWriter.class);
+    // See note on doReturn vs when(...).thenReturn in the sibling test above.
+    doReturn(stubbedWriter).when(factory)
+        .createFileWriter(isA(FilePath.class), eq(tgtSerialization), eq(tgtEncoding), eq(tgtCompression));
+    var defaultWriter = mock(TargetWriter.class);
+
+    // When
+    try (var router = CarmlMapCommand.buildTargetRouter(Set.of(logicalTarget), factory, defaultWriter)) {
+      assertThat(router.getLogicalTargets(), is(Set.of(logicalTarget)));
+    }
+
+    // Then - the factory got the Target-level values because the LogicalTarget declared none.
+    verify(factory).createFileWriter(isA(FilePath.class), eq(tgtSerialization), eq(tgtEncoding), eq(tgtCompression));
+  }
+
+  @Test
+  @SuppressWarnings("resource")
+  void buildTargetRouter_withPartialLogicalTargetOverride_usesLtEncodingAndTargetCompressionSerialization() {
+    // Given - only LogicalTarget.encoding is declared; serialization and compression fall through
+    // to target-level values. This pins the per-property null-check contract inside
+    // buildWriterForLogicalTarget: each property is resolved independently, so a partial
+    // LogicalTarget override must mix LT-level and Target-level values in the factory call.
+    var vf = SimpleValueFactory.getInstance();
+    var ltEncoding = vf.createIRI("http://w3id.org/rml/UTF-16");
+    // Target-level serialization/compression supply the fallback values.
+    var tgtSerialization = vf.createIRI("http://www.w3.org/ns/formats/N-Quads");
+    var tgtCompression = vf.createIRI("http://w3id.org/rml/gzip");
+
+    var fileTarget = mock(Target.class, withSettings().extraInterfaces(FilePath.class));
+    when(fileTarget.getSerialization()).thenReturn(tgtSerialization);
+    when(fileTarget.getCompression()).thenReturn(tgtCompression);
+    // Target-level encoding is intentionally NOT stubbed: the LT-level value short-circuits the
+    // null check, so target.getEncoding() must never be invoked. The verify(..., never()) below
+    // pins that invariant.
+
+    var logicalTarget = mock(LogicalTarget.class);
+    when(logicalTarget.getTarget()).thenReturn(fileTarget);
+    when(logicalTarget.getEncoding()).thenReturn(ltEncoding);
+    // serialization/compression on LogicalTarget default to null on the un-stubbed mock — no
+    // explicit stub needed and explicitly stubbing them to null would trigger Mockito's
+    // UnnecessaryStubbing under strict mode.
+
+    var factory = spy(TargetWriterFactory.builder()
+        .build());
+    var stubbedWriter = mock(TargetWriter.class);
+    // doReturn-over-when keeps the spy from calling through to createFileWriter during stub
+    // setup — mirrors the pattern in the sibling LT-override/target-only tests.
+    doReturn(stubbedWriter).when(factory)
+        .createFileWriter(isA(FilePath.class), eq(tgtSerialization), eq(ltEncoding), eq(tgtCompression));
+    var defaultWriter = mock(TargetWriter.class);
+
+    // When
+    try (var router = CarmlMapCommand.buildTargetRouter(Set.of(logicalTarget), factory, defaultWriter)) {
+      assertThat(router.getLogicalTargets(), is(Set.of(logicalTarget)));
+    }
+
+    // Then - the factory received the MIXED quadruple: LT encoding, Target serialization, Target
+    // compression.
+    verify(factory).createFileWriter(isA(FilePath.class), eq(tgtSerialization), eq(ltEncoding), eq(tgtCompression));
+    // Encoding short-circuit contract: with LT-level encoding non-null, target.getEncoding() must
+    // never be consulted. The other two target-level getters ARE called (verified implicitly by
+    // the factory call above).
+    verify(fileTarget, never()).getEncoding();
+  }
+
+  @Test
+  void buildTargetRouter_withNullTarget_throwsUnsupportedOperationException() {
+    // Given - a LogicalTarget whose getTarget() returns null. The buildWriterForLogicalTarget
+    // helper handles this defensively: rather than NPE'ing it emits a diagnostic pointing at
+    // the "null" placeholder branch. The error message must also include the "file an issue"
+    // hint so users have an actionable next step.
+    var logicalTarget = mock(LogicalTarget.class);
+    when(logicalTarget.getTarget()).thenReturn(null);
+    when(logicalTarget.getResourceName()).thenReturn(":nullTarget");
+
+    var targetWriterFactory = TargetWriterFactory.builder()
+        .build();
+    var logicalTargets = Set.of(logicalTarget);
+
+    // When / Then
+    try (var defaultWriter = mock(TargetWriter.class)) {
+      var thrown = assertThrows(UnsupportedOperationException.class,
+          () -> CarmlMapCommand.buildTargetRouter(logicalTargets, targetWriterFactory, defaultWriter));
+
+      // "null" placeholder from target.getClass().getSimpleName() ternary branch.
+      assertThat(thrown.getMessage(), containsString("null"));
+      // GitHub-issue hint preserved across both the non-FilePath and null-target branches.
+      assertThat(thrown.getMessage(), containsString("file an issue"));
     }
   }
 
