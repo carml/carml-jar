@@ -33,13 +33,14 @@ This project produces two artifacts:
 ### Map RDF file to output
 
 ```console
-Usage:  map [-hVPSv] [-E=<evaluatorMode>] [-F=<outputRdfFormat>]
-            [-o=<outputPath>] [-M=<prefixMappings>]...
-            [-p=<prefixDeclarations>[,<prefixDeclarations>...]]...
-            [-b=<baseIri>] [-l=<limit>] [--spill-to-disk]
-            [--metrics[=<metricsEndpoint>]] (-m=<mappingFiles>
-            [-m=<mappingFiles>]... [-f=<mappingFileRdfFormat>]
-            [-r=<relativeSourceLocation>])
+Usage:  map [-hVPvS] [-F=<outputRdfFormat>] [-o=<outputPath>]
+            [-M=<prefixMappings>]... [-p=<prefixDeclarations>[,
+            <prefixDeclarations>...]]... [-b=<baseIri>] [-l=<limit>]
+            [-E=<evaluatorMode>] [--spill-to-disk]
+            [--in-process-db-memory=<inProcessDbMemory>]
+            [--reactive-spill-threshold=<reactiveSpillThreshold>] [--metrics
+            [=<metricsEndpoint>]] (-m=<mappingFiles> [-m=<mappingFiles>]...
+            [-f=<mappingFileRdfFormat>] [-r=<relativeSourceLocation>])
   -h, --help                 Show this help message and exit.
   -V, --version              Print version information and exit.
   -m, --mapping=<mappingFiles>
@@ -110,14 +111,40 @@ Usage:  map [-hVPSv] [-E=<evaluatorMode>] [-F=<outputRdfFormat>]
                              auto: Select best evaluator per view via
                                ServiceLoader (default).
                              reactive: Force reactive evaluator for all views.
-                             in-process-db: Force in-process database evaluator for
-                               all views.
-      --spill-to-disk        Use an on-disk database instead of in-memory for
-                               the in-process-db evaluator.
-                             Enables processing of larger-than-memory datasets
-                               by spilling to disk.
-                             Only effective when evaluator mode is
-                               'in-process-db' or 'auto'.
+                             in-process-db: Force in-process database evaluator
+                               for all views.
+      --spill-to-disk        Enable spill-to-disk for larger-than-memory
+                               workloads.
+                             For the in-process-db evaluator: uses an on-disk
+                               database instead of in-memory;
+                             memory and threads are auto-tuned. Minimum 512 MB
+                               system/container memory recommended.
+                             For the reactive evaluator: routes joins through
+                               an in-process-DB join executor that
+                             switches from in-memory probe to SQL HASH JOIN
+                               once parent rows exceed
+                             --reactive-spill-threshold, with intermediates
+                               spilled to the system temp directory.
+                             In Docker, mount a volume to /carml-spill for
+                               database and spill files:
+                               docker run -v /tmp/carml-spill:/carml-spill
+                               carml map --spill-to-disk -m mapping.ttl
+      --in-process-db-memory=<inProcessDbMemory>
+                             Memory limit for the in-process database (e.g.
+                               '4GB', '512MB').
+                             Overrides the auto-tuned value. Only effective
+                               with --spill-to-disk.
+                             Default: system memory minus JVM heap minus 512 MB
+                               overhead.
+      --reactive-spill-threshold=<reactiveSpillThreshold>
+                             Parent-row count threshold for spilling reactive
+                               joins to disk.
+                             Below the threshold, joins use an in-memory probe
+                               (fast).
+                             Above, joins are routed through the in-process DB
+                               with a spillable SQL hash join.
+                             Default: 50000. Only effective with
+                               --spill-to-disk.
       --metrics[=<metricsEndpoint>]
                              Push execution metrics to a Prometheus Pushgateway
                                after mapping completes.
@@ -125,6 +152,8 @@ Usage:  map [-hVPSv] [-E=<evaluatorMode>] [-F=<outputRdfFormat>]
                                9091).
                              Also starts a Prometheus scrape endpoint on port
                                9092 for real-time monitoring.
+                             Metrics include statement counts, durations,
+                               iteration counts per TriplesMap.
                              Start the monitoring stack with: docker compose -f
                                docker/docker-compose.yml up -d
 ```
@@ -277,13 +306,14 @@ The CARML jar RDF4J artifact supports the same output formats (`-of`) that are s
 See the `map` help-description for details:
 
 ```console
-Usage:  map [-hVPSv] [-E=<evaluatorMode>] [-F=<outputRdfFormat>]
-            [-o=<outputPath>] [-M=<prefixMappings>]...
-            [-p=<prefixDeclarations>[,<prefixDeclarations>...]]...
-            [-b=<baseIri>] [-l=<limit>] [--spill-to-disk]
-            [--metrics[=<metricsEndpoint>]] (-m=<mappingFiles>
-            [-m=<mappingFiles>]... [-f=<mappingFileRdfFormat>]
-            [-r=<relativeSourceLocation>])
+Usage:  map [-hVPvS] [-F=<outputRdfFormat>] [-o=<outputPath>]
+            [-M=<prefixMappings>]... [-p=<prefixDeclarations>[,
+            <prefixDeclarations>...]]... [-b=<baseIri>] [-l=<limit>]
+            [-E=<evaluatorMode>] [--spill-to-disk]
+            [--in-process-db-memory=<inProcessDbMemory>]
+            [--reactive-spill-threshold=<reactiveSpillThreshold>] [--metrics
+            [=<metricsEndpoint>]] (-m=<mappingFiles> [-m=<mappingFiles>]...
+            [-f=<mappingFileRdfFormat>] [-r=<relativeSourceLocation>])
   -h, --help                 Show this help message and exit.
   -V, --version              Print version information and exit.
   -m, --mapping=<mappingFiles>
@@ -354,14 +384,40 @@ Usage:  map [-hVPSv] [-E=<evaluatorMode>] [-F=<outputRdfFormat>]
                              auto: Select best evaluator per view via
                                ServiceLoader (default).
                              reactive: Force reactive evaluator for all views.
-                             in-process-db: Force in-process database evaluator for
-                               all views.
-      --spill-to-disk        Use an on-disk database instead of in-memory for
-                               the in-process-db evaluator.
-                             Enables processing of larger-than-memory datasets
-                               by spilling to disk.
-                             Only effective when evaluator mode is
-                               'in-process-db' or 'auto'.
+                             in-process-db: Force in-process database evaluator
+                               for all views.
+      --spill-to-disk        Enable spill-to-disk for larger-than-memory
+                               workloads.
+                             For the in-process-db evaluator: uses an on-disk
+                               database instead of in-memory;
+                             memory and threads are auto-tuned. Minimum 512 MB
+                               system/container memory recommended.
+                             For the reactive evaluator: routes joins through
+                               an in-process-DB join executor that
+                             switches from in-memory probe to SQL HASH JOIN
+                               once parent rows exceed
+                             --reactive-spill-threshold, with intermediates
+                               spilled to the system temp directory.
+                             In Docker, mount a volume to /carml-spill for
+                               database and spill files:
+                               docker run -v /tmp/carml-spill:/carml-spill
+                               carml map --spill-to-disk -m mapping.ttl
+      --in-process-db-memory=<inProcessDbMemory>
+                             Memory limit for the in-process database (e.g.
+                               '4GB', '512MB').
+                             Overrides the auto-tuned value. Only effective
+                               with --spill-to-disk.
+                             Default: system memory minus JVM heap minus 512 MB
+                               overhead.
+      --reactive-spill-threshold=<reactiveSpillThreshold>
+                             Parent-row count threshold for spilling reactive
+                               joins to disk.
+                             Below the threshold, joins use an in-memory probe
+                               (fast).
+                             Above, joins are routed through the in-process DB
+                               with a spillable SQL hash join.
+                             Default: 50000. Only effective with
+                               --spill-to-disk.
       --metrics[=<metricsEndpoint>]
                              Push execution metrics to a Prometheus Pushgateway
                                after mapping completes.
@@ -369,6 +425,8 @@ Usage:  map [-hVPSv] [-E=<evaluatorMode>] [-F=<outputRdfFormat>]
                                9091).
                              Also starts a Prometheus scrape endpoint on port
                                9092 for real-time monitoring.
+                             Metrics include statement counts, durations,
+                               iteration counts per TriplesMap.
                              Start the monitoring stack with: docker compose -f
                                docker/docker-compose.yml up -d
 ```
@@ -382,13 +440,14 @@ output formats (`-of`) are those that [Jena supports](https://jena.apache.org/do
 See the `map` help-description for details:
 
 ```console
-Usage:  map [-hVPSv] [-E=<evaluatorMode>] [-F=<outputRdfFormat>]
-            [-o=<outputPath>] [-M=<prefixMappings>]...
-            [-p=<prefixDeclarations>[,<prefixDeclarations>...]]...
-            [-b=<baseIri>] [-l=<limit>] [--spill-to-disk]
-            [--metrics[=<metricsEndpoint>]] (-m=<mappingFiles>
-            [-m=<mappingFiles>]... [-f=<mappingFileRdfFormat>]
-            [-r=<relativeSourceLocation>])
+Usage:  map [-hVPvS] [-F=<outputRdfFormat>] [-o=<outputPath>]
+            [-M=<prefixMappings>]... [-p=<prefixDeclarations>[,
+            <prefixDeclarations>...]]... [-b=<baseIri>] [-l=<limit>]
+            [-E=<evaluatorMode>] [--spill-to-disk]
+            [--in-process-db-memory=<inProcessDbMemory>]
+            [--reactive-spill-threshold=<reactiveSpillThreshold>] [--metrics
+            [=<metricsEndpoint>]] (-m=<mappingFiles> [-m=<mappingFiles>]...
+            [-f=<mappingFileRdfFormat>] [-r=<relativeSourceLocation>])
   -h, --help                 Show this help message and exit.
   -V, --version              Print version information and exit.
   -m, --mapping=<mappingFiles>
@@ -460,14 +519,40 @@ Usage:  map [-hVPSv] [-E=<evaluatorMode>] [-F=<outputRdfFormat>]
                              auto: Select best evaluator per view via
                                ServiceLoader (default).
                              reactive: Force reactive evaluator for all views.
-                             in-process-db: Force in-process database evaluator for
-                               all views.
-      --spill-to-disk        Use an on-disk database instead of in-memory for
-                               the in-process-db evaluator.
-                             Enables processing of larger-than-memory datasets
-                               by spilling to disk.
-                             Only effective when evaluator mode is
-                               'in-process-db' or 'auto'.
+                             in-process-db: Force in-process database evaluator
+                               for all views.
+      --spill-to-disk        Enable spill-to-disk for larger-than-memory
+                               workloads.
+                             For the in-process-db evaluator: uses an on-disk
+                               database instead of in-memory;
+                             memory and threads are auto-tuned. Minimum 512 MB
+                               system/container memory recommended.
+                             For the reactive evaluator: routes joins through
+                               an in-process-DB join executor that
+                             switches from in-memory probe to SQL HASH JOIN
+                               once parent rows exceed
+                             --reactive-spill-threshold, with intermediates
+                               spilled to the system temp directory.
+                             In Docker, mount a volume to /carml-spill for
+                               database and spill files:
+                               docker run -v /tmp/carml-spill:/carml-spill
+                               carml map --spill-to-disk -m mapping.ttl
+      --in-process-db-memory=<inProcessDbMemory>
+                             Memory limit for the in-process database (e.g.
+                               '4GB', '512MB').
+                             Overrides the auto-tuned value. Only effective
+                               with --spill-to-disk.
+                             Default: system memory minus JVM heap minus 512 MB
+                               overhead.
+      --reactive-spill-threshold=<reactiveSpillThreshold>
+                             Parent-row count threshold for spilling reactive
+                               joins to disk.
+                             Below the threshold, joins use an in-memory probe
+                               (fast).
+                             Above, joins are routed through the in-process DB
+                               with a spillable SQL hash join.
+                             Default: 50000. Only effective with
+                               --spill-to-disk.
       --metrics[=<metricsEndpoint>]
                              Push execution metrics to a Prometheus Pushgateway
                                after mapping completes.
@@ -475,6 +560,8 @@ Usage:  map [-hVPSv] [-E=<evaluatorMode>] [-F=<outputRdfFormat>]
                                9091).
                              Also starts a Prometheus scrape endpoint on port
                                9092 for real-time monitoring.
+                             Metrics include statement counts, durations,
+                               iteration counts per TriplesMap.
                              Start the monitoring stack with: docker compose -f
                                docker/docker-compose.yml up -d
 ```

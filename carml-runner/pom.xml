@@ -46,6 +46,10 @@
         </dependency>
         <dependency>
             <groupId>io.carml</groupId>
+            <artifactId>carml-logical-view-join-duckdb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.carml</groupId>
             <artifactId>carml-observability-micrometer</artifactId>
         </dependency>
         <dependency>

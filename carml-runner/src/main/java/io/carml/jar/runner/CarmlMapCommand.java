@@ -22,7 +22,10 @@ import io.carml.jar.runner.output.OutputHandler;
 import io.carml.jar.runner.prefix.NamespacePrefixMapper;
 import io.carml.jar.runner.prefix.PrefixMappingException;
 import io.carml.logicalview.DefaultLogicalViewEvaluatorFactory;
+import io.carml.logicalview.InMemoryJoinExecutorFactory;
+import io.carml.logicalview.JoinExecutorFactory;
 import io.carml.logicalview.duckdb.DuckDbLogicalViewEvaluatorFactory;
+import io.carml.logicalview.join.duckdb.DuckDbJoinExecutorFactory;
 import io.carml.model.FilePath;
 import io.carml.model.LogicalTarget;
 import io.carml.model.Resource;
@@ -128,12 +131,14 @@ public class CarmlMapCommand implements Callable<Integer> {
 
   @SuppressWarnings("unused")
   @Option(names = {"--spill-to-disk"}, order = OptionOrder.SPILL_TO_DISK_ORDER,
-      description = {"Use an on-disk database instead of in-memory for the in-process-db evaluator.",
-          "Enables processing of larger-than-memory datasets by spilling to disk.",
-          "Memory and threads are auto-tuned. Minimum 512 MB system/container memory recommended.",
-          "Only effective when evaluator mode is 'in-process-db' or 'auto'.",
-          "In Docker, mount a volume to /duckdb-tmp for database and spill files:",
-          "  docker run -v /tmp/duckdb:/duckdb-tmp carml map --spill-to-disk -m mapping.ttl"})
+      description = {"Enable spill-to-disk for larger-than-memory workloads.",
+          "For the in-process-db evaluator: uses an on-disk database instead of in-memory;",
+          "memory and threads are auto-tuned. Minimum 512 MB system/container memory recommended.",
+          "For the reactive evaluator: routes joins through an in-process-DB join executor that",
+          "switches from in-memory probe to SQL HASH JOIN once parent rows exceed",
+          "--reactive-spill-threshold, with intermediates spilled to the system temp directory.",
+          "In Docker, mount a volume to /carml-spill for database and spill files:",
+          "  docker run -v /tmp/carml-spill:/carml-spill carml map --spill-to-disk -m mapping.ttl"})
   private boolean spillToDisk;
 
   private static final java.util.regex.Pattern MEMORY_LIMIT_PATTERN = java.util.regex.Pattern
@@ -145,6 +150,14 @@ public class CarmlMapCommand implements Callable<Integer> {
           "Overrides the auto-tuned value. Only effective with --spill-to-disk.",
           "Default: system memory minus JVM heap minus 512 MB overhead."})
   private String inProcessDbMemory;
+
+  @SuppressWarnings("unused")
+  @Option(names = {"--reactive-spill-threshold"}, order = OptionOrder.REACTIVE_SPILL_THRESHOLD_ORDER,
+      description = {"Parent-row count threshold for spilling reactive joins to disk.",
+          "Below the threshold, joins use an in-memory probe (fast).",
+          "Above, joins are routed through the in-process DB with a spillable SQL hash join.",
+          "Default: 50000. Only effective with --spill-to-disk."})
+  private int reactiveSpillThreshold = 50_000;
 
   @SuppressWarnings("unused")
   @Option(names = {"--metrics"}, order = OptionOrder.METRICS_ORDER, arity = "0..1", fallbackValue = "localhost:9091",
@@ -174,11 +187,11 @@ public class CarmlMapCommand implements Callable<Integer> {
       return USAGE;
     }
 
-    if (spillToDisk && evaluatorMode == EvaluatorMode.reactive) {
-      LOG.warn("--spill-to-disk is ignored when evaluator mode is 'reactive'");
-    }
     if (inProcessDbMemory != null && !spillToDisk) {
       LOG.warn("--in-process-db-memory is ignored when --spill-to-disk is not set");
+    }
+    if (reactiveSpillThreshold != 50_000 && !spillToDisk) {
+      LOG.warn("--reactive-spill-threshold is ignored when --spill-to-disk is not set");
     }
     PrometheusMeterRegistry metricsRegistry = null;
     MetricsObserver metricsObserver = null;
@@ -252,6 +265,25 @@ public class CarmlMapCommand implements Callable<Integer> {
         : new DuckDbLogicalViewEvaluatorFactory(virtualThreadScheduler);
   }
 
+  /**
+   * Wires the {@link JoinExecutorFactory} that the reactive
+   * {@link DefaultLogicalViewEvaluatorFactory} will use. Without {@code --spill-to-disk} the
+   * in-memory factory is returned (no perf impact). With it, joins above
+   * {@code --reactive-spill-threshold} parent rows route through a file-backed in-process DB
+   * temp table under the system temp directory.
+   */
+  private JoinExecutorFactory createJoinExecutorFactory() {
+    if (!spillToDisk) {
+      return new InMemoryJoinExecutorFactory();
+    }
+    if (reactiveSpillThreshold < 0) {
+      throw new CarmlJarException(
+          "Invalid --reactive-spill-threshold value: %d. Must be >= 0.".formatted(reactiveSpillThreshold));
+    }
+    var spillDir = Path.of(System.getProperty("java.io.tmpdir"));
+    return new DuckDbJoinExecutorFactory(reactiveSpillThreshold, true, spillDir);
+  }
+
   private RdfRmlMapper prepareMapper(Set<TriplesMap> mapping, DuckDbLogicalViewEvaluatorFactory duckDbFactory,
       MetricsObserver metricsObserver, TargetRouter targetRouter) {
 
@@ -284,12 +316,13 @@ public class CarmlMapCommand implements Callable<Integer> {
     outputOptions.getBaseIri()
         .ifPresent(mapperBuilder::baseIri);
 
+    var joinExecutorFactory = createJoinExecutorFactory();
     if (evaluatorMode == EvaluatorMode.reactive) {
-      mapperBuilder.logicalViewEvaluatorFactory(new DefaultLogicalViewEvaluatorFactory());
+      mapperBuilder.logicalViewEvaluatorFactory(new DefaultLogicalViewEvaluatorFactory(joinExecutorFactory));
     } else if (duckDbFactory != null) {
       mapperBuilder.logicalViewEvaluatorFactory(duckDbFactory);
       if (evaluatorMode == EvaluatorMode.auto) {
-        mapperBuilder.logicalViewEvaluatorFactory(new DefaultLogicalViewEvaluatorFactory());
+        mapperBuilder.logicalViewEvaluatorFactory(new DefaultLogicalViewEvaluatorFactory(joinExecutorFactory));
       }
     }
 

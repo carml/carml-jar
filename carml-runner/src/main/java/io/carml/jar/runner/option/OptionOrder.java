@@ -34,6 +34,8 @@ public final class OptionOrder {
 
   public static final int DUCKDB_MEMORY_ORDER = 145;
 
+  public static final int REACTIVE_SPILL_THRESHOLD_ORDER = 147;
+
   public static final int METRICS_ORDER = 150;
 
   public static final int SOURCE_ROWS_ORDER = 200;

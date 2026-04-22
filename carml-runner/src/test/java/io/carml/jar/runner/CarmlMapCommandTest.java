@@ -330,7 +330,7 @@ class CarmlMapCommandTest {
   }
 
   @Test
-  void givenStreamEvaluatorAndSpillToDiskArg_whenMapCommandRun_thenSpillToDiskArgIgnored() {
+  void givenStreamEvaluatorAndSpillToDiskArg_whenMapCommandRun_thenSpillToDiskAppliesToReactive() {
     // Given
     var mapping = getStringForPath(TEST_PATH, "mapping", "mapping.rml.ttl");
     var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
@@ -339,7 +339,24 @@ class CarmlMapCommandTest {
     // When
     int exitCode = commandLine.execute(args);
 
-    // Then - flag is silently ignored; reactive evaluator runs successfully
+    // Then — flag now wires the DuckDB-backed JoinExecutor for reactive joins; mapping completes
+    // successfully without warnings.
+    verify(outputHandler).outputStreamingBytes(bytesCaptor.capture(), eq(System.out));
+    assertThat(exitCode, is(0));
+  }
+
+  @Test
+  void givenReactiveSpillThresholdArg_whenMapCommandRun_thenParsedAndAccepted() {
+    // Given
+    var mapping = getStringForPath(TEST_PATH, "mapping", "mapping.rml.ttl");
+    var relativeSourceLocation = getStringForPath(TEST_PATH, "source");
+    var args = new String[] {"map", "-m", mapping, "-rsl", relativeSourceLocation, "-E", "reactive", "--spill-to-disk",
+        "--reactive-spill-threshold", "1000"};
+
+    // When
+    int exitCode = commandLine.execute(args);
+
+    // Then — option parses; reactive evaluator with spill threshold 1000 runs successfully.
     verify(outputHandler).outputStreamingBytes(bytesCaptor.capture(), eq(System.out));
     assertThat(exitCode, is(0));
   }
