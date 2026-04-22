@@ -22,7 +22,10 @@
 ## Introduction
 CARML jar is a CLI application for executing RML mappings with [CARML](https://github.com/carml/carml).
 
-CARML jar runs on JDK 17.
+CARML jar requires JDK 21 or newer (for virtual-thread-based mapping execution and the upstream
+`idlab-functions-java` FNML artifact, which ships Java 21 bytecode on Maven Central). The
+[CARML core library](https://github.com/carml/carml) still publishes Java 17 bytecode so library
+consumers embedding CARML on Java 17 are unaffected.
 
 This project produces two artifacts:
 * CARML jar RDF4J - which outputs RDF using [RDF4J](https://rdf4j.org/)
@@ -614,6 +617,7 @@ java -jar carml-jar-X.jar map -m mapping.ttl -rsl input -F nt --metrics myhost:9
 
 ## Building the project
 
+Requires JDK 21 or newer; enforced by the `maven-enforcer-plugin` (`requireJavaVersion [21,)`).
 The project can be built by running:
 
 ```console

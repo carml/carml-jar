@@ -316,6 +316,11 @@
                                     <requireMavenVersion>
                                         <version>3.3.9</version>
                                     </requireMavenVersion>
+                                    <!-- CLI targets Java 21 (see maven.compiler.release=21 and virtual-thread usage). -->
+                                    <requireJavaVersion>
+                                        <version>[21,)</version>
+                                        <message>carml-jar requires JDK 21 or newer to build and run.</message>
+                                    </requireJavaVersion>
                                 </rules>
                             </configuration>
                         </execution>
