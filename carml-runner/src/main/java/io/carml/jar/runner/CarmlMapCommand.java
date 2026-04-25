@@ -12,6 +12,7 @@ import io.carml.engine.target.StreamTargetWriter;
 import io.carml.engine.target.TargetRouter;
 import io.carml.engine.target.TargetWriter;
 import io.carml.engine.target.TargetWriterFactory;
+import io.carml.functions.FunctionRegistry;
 import io.carml.jar.runner.input.ModelLoader;
 import io.carml.jar.runner.option.EvaluatorMode;
 import io.carml.jar.runner.option.LoggingOptions;
@@ -269,8 +270,8 @@ public class CarmlMapCommand implements Callable<Integer> {
    * Wires the {@link JoinExecutorFactory} that the reactive
    * {@link DefaultLogicalViewEvaluatorFactory} will use. Without {@code --spill-to-disk} the
    * in-memory factory is returned (no perf impact). With it, joins above
-   * {@code --reactive-spill-threshold} parent rows route through a file-backed in-process DB
-   * temp table under the system temp directory.
+   * {@code --reactive-spill-threshold} parent rows route through a file-backed in-process DB temp
+   * table under the system temp directory.
    */
   private JoinExecutorFactory createJoinExecutorFactory() {
     if (!spillToDisk) {
@@ -316,13 +317,21 @@ public class CarmlMapCommand implements Callable<Integer> {
     outputOptions.getBaseIri()
         .ifPresent(mapperBuilder::baseIri);
 
+    // Share a single FunctionRegistry between term generation (RdfRmlMapper) and join-key
+    // evaluation (DefaultLogicalViewEvaluatorFactory). The builder populates this registry with
+    // discovered providers plus any functions registered via the builder chain.
+    var functionRegistry = FunctionRegistry.create();
+    mapperBuilder.functionRegistry(functionRegistry);
+
     var joinExecutorFactory = createJoinExecutorFactory();
     if (evaluatorMode == EvaluatorMode.reactive) {
-      mapperBuilder.logicalViewEvaluatorFactory(new DefaultLogicalViewEvaluatorFactory(joinExecutorFactory));
+      mapperBuilder
+          .logicalViewEvaluatorFactory(new DefaultLogicalViewEvaluatorFactory(joinExecutorFactory, functionRegistry));
     } else if (duckDbFactory != null) {
       mapperBuilder.logicalViewEvaluatorFactory(duckDbFactory);
       if (evaluatorMode == EvaluatorMode.auto) {
-        mapperBuilder.logicalViewEvaluatorFactory(new DefaultLogicalViewEvaluatorFactory(joinExecutorFactory));
+        mapperBuilder
+            .logicalViewEvaluatorFactory(new DefaultLogicalViewEvaluatorFactory(joinExecutorFactory, functionRegistry));
       }
     }
 
