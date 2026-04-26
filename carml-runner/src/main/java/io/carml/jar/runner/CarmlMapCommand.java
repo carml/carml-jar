@@ -12,7 +12,6 @@ import io.carml.engine.target.StreamTargetWriter;
 import io.carml.engine.target.TargetRouter;
 import io.carml.engine.target.TargetWriter;
 import io.carml.engine.target.TargetWriterFactory;
-import io.carml.functions.FunctionRegistry;
 import io.carml.jar.runner.input.ModelLoader;
 import io.carml.jar.runner.option.EvaluatorMode;
 import io.carml.jar.runner.option.LoggingOptions;
@@ -22,7 +21,6 @@ import io.carml.jar.runner.option.OutputOptions;
 import io.carml.jar.runner.output.OutputHandler;
 import io.carml.jar.runner.prefix.NamespacePrefixMapper;
 import io.carml.jar.runner.prefix.PrefixMappingException;
-import io.carml.logicalview.DefaultLogicalViewEvaluatorFactory;
 import io.carml.logicalview.InMemoryJoinExecutorFactory;
 import io.carml.logicalview.JoinExecutorFactory;
 import io.carml.logicalview.duckdb.DuckDbLogicalViewEvaluatorFactory;
@@ -194,6 +192,10 @@ public class CarmlMapCommand implements Callable<Integer> {
     if (reactiveSpillThreshold != 50_000 && !spillToDisk) {
       LOG.warn("--reactive-spill-threshold is ignored when --spill-to-disk is not set");
     }
+    if (reactiveSpillThreshold < 0) {
+      LOG.error("Invalid --reactive-spill-threshold value: {}. Must be >= 0.", reactiveSpillThreshold);
+      return USAGE;
+    }
     PrometheusMeterRegistry metricsRegistry = null;
     MetricsObserver metricsObserver = null;
     PrometheusMetricsServer metricsServer = null;
@@ -267,19 +269,14 @@ public class CarmlMapCommand implements Callable<Integer> {
   }
 
   /**
-   * Wires the {@link JoinExecutorFactory} that the reactive
-   * {@link DefaultLogicalViewEvaluatorFactory} will use. Without {@code --spill-to-disk} the
-   * in-memory factory is returned (no perf impact). With it, joins above
-   * {@code --reactive-spill-threshold} parent rows route through a file-backed in-process DB temp
-   * table under the system temp directory.
+   * Wires the {@link JoinExecutorFactory} that the reactive default logical-view evaluator will use.
+   * Without {@code --spill-to-disk} the in-memory factory is returned (no perf impact). With it,
+   * joins above {@code --reactive-spill-threshold} parent rows route through a file-backed in-process
+   * DB temp table under the system temp directory.
    */
   private JoinExecutorFactory createJoinExecutorFactory() {
     if (!spillToDisk) {
       return new InMemoryJoinExecutorFactory();
-    }
-    if (reactiveSpillThreshold < 0) {
-      throw new CarmlJarException(
-          "Invalid --reactive-spill-threshold value: %d. Must be >= 0.".formatted(reactiveSpillThreshold));
     }
     var spillDir = Path.of(System.getProperty("java.io.tmpdir"));
     return new DuckDbJoinExecutorFactory(reactiveSpillThreshold, true, spillDir);
@@ -317,21 +314,12 @@ public class CarmlMapCommand implements Callable<Integer> {
     outputOptions.getBaseIri()
         .ifPresent(mapperBuilder::baseIri);
 
-    // Share a single FunctionRegistry between term generation (RdfRmlMapper) and join-key
-    // evaluation (DefaultLogicalViewEvaluatorFactory). The builder populates this registry with
-    // discovered providers plus any functions registered via the builder chain.
-    var functionRegistry = FunctionRegistry.create();
-    mapperBuilder.functionRegistry(functionRegistry);
-
-    var joinExecutorFactory = createJoinExecutorFactory();
     if (evaluatorMode == EvaluatorMode.reactive) {
-      mapperBuilder
-          .logicalViewEvaluatorFactory(new DefaultLogicalViewEvaluatorFactory(joinExecutorFactory, functionRegistry));
+      mapperBuilder.joinExecutorFactory(createJoinExecutorFactory());
     } else if (duckDbFactory != null) {
       mapperBuilder.logicalViewEvaluatorFactory(duckDbFactory);
       if (evaluatorMode == EvaluatorMode.auto) {
-        mapperBuilder
-            .logicalViewEvaluatorFactory(new DefaultLogicalViewEvaluatorFactory(joinExecutorFactory, functionRegistry));
+        mapperBuilder.joinExecutorFactory(createJoinExecutorFactory());
       }
     }
 
