@@ -41,8 +41,9 @@ Usage:  map [-hVPvS] [-F=<outputRdfFormat>] [-o=<outputPath>]
             <prefixDeclarations>...]]... [-b=<baseIri>] [-l=<limit>]
             [-E=<evaluatorMode>] [--spill-to-disk]
             [--in-process-db-memory=<inProcessDbMemory>]
-            [--reactive-spill-threshold=<reactiveSpillThreshold>] [--metrics
-            [=<metricsEndpoint>]] (-m=<mappingFiles> [-m=<mappingFiles>]...
+            [--reactive-spill-threshold=<reactiveSpillThreshold>]
+            [--dedup=<dedup>] [--metrics[=<metricsEndpoint>]]
+            (-m=<mappingFiles> [-m=<mappingFiles>]...
             [-f=<mappingFileRdfFormat>] [-r=<relativeSourceLocation>])
   -h, --help                 Show this help message and exit.
   -V, --version              Print version information and exit.
@@ -148,6 +149,28 @@ Usage:  map [-hVPvS] [-F=<outputRdfFormat>] [-o=<outputPath>]
                                with a spillable SQL hash join.
                              Default: 50000. Only effective with
                                --spill-to-disk.
+      --dedup=<dedup>        Output deduplication mode.
+                             auto: Annotation-driven (default). PrimaryKey /
+                               Unique+NotNull → no dedup;
+                               NotNull on all projected fields →
+                               simple-equality dedup; otherwise → exact dedup.
+                               Bare LogicalSource (no annotations) → no dedup.
+                             none: Never deduplicate. Produces duplicate
+                               triples when source rows repeat or
+                               when multiple TriplesMaps emit the same triple.
+                               Skips dedup overhead but every
+                               duplicate still flows through serialization —
+                               for duplicate-heavy mappings,
+                               view/full can be net faster because
+                               serialization is often the bottleneck.
+                             view: Force at least view-level dedup. PrimaryKey
+                               / Unique+NotNull keep the no-op,
+                               but unannotated views escalate from no-op to
+                               exact dedup.
+                             full: view-level dedup plus statement-level
+                               distinct on the assembled output.
+                               Catches cross-TriplesMap duplicate triples;
+                               memory grows with distinct output size.
       --metrics[=<metricsEndpoint>]
                              Push execution metrics to a Prometheus Pushgateway
                                after mapping completes.
@@ -314,8 +337,9 @@ Usage:  map [-hVPvS] [-F=<outputRdfFormat>] [-o=<outputPath>]
             <prefixDeclarations>...]]... [-b=<baseIri>] [-l=<limit>]
             [-E=<evaluatorMode>] [--spill-to-disk]
             [--in-process-db-memory=<inProcessDbMemory>]
-            [--reactive-spill-threshold=<reactiveSpillThreshold>] [--metrics
-            [=<metricsEndpoint>]] (-m=<mappingFiles> [-m=<mappingFiles>]...
+            [--reactive-spill-threshold=<reactiveSpillThreshold>]
+            [--dedup=<dedup>] [--metrics[=<metricsEndpoint>]]
+            (-m=<mappingFiles> [-m=<mappingFiles>]...
             [-f=<mappingFileRdfFormat>] [-r=<relativeSourceLocation>])
   -h, --help                 Show this help message and exit.
   -V, --version              Print version information and exit.
@@ -421,6 +445,28 @@ Usage:  map [-hVPvS] [-F=<outputRdfFormat>] [-o=<outputPath>]
                                with a spillable SQL hash join.
                              Default: 50000. Only effective with
                                --spill-to-disk.
+      --dedup=<dedup>        Output deduplication mode.
+                             auto: Annotation-driven (default). PrimaryKey /
+                               Unique+NotNull → no dedup;
+                               NotNull on all projected fields →
+                               simple-equality dedup; otherwise → exact dedup.
+                               Bare LogicalSource (no annotations) → no dedup.
+                             none: Never deduplicate. Produces duplicate
+                               triples when source rows repeat or
+                               when multiple TriplesMaps emit the same triple.
+                               Skips dedup overhead but every
+                               duplicate still flows through serialization —
+                               for duplicate-heavy mappings,
+                               view/full can be net faster because
+                               serialization is often the bottleneck.
+                             view: Force at least view-level dedup. PrimaryKey
+                               / Unique+NotNull keep the no-op,
+                               but unannotated views escalate from no-op to
+                               exact dedup.
+                             full: view-level dedup plus statement-level
+                               distinct on the assembled output.
+                               Catches cross-TriplesMap duplicate triples;
+                               memory grows with distinct output size.
       --metrics[=<metricsEndpoint>]
                              Push execution metrics to a Prometheus Pushgateway
                                after mapping completes.
@@ -448,8 +494,9 @@ Usage:  map [-hVPvS] [-F=<outputRdfFormat>] [-o=<outputPath>]
             <prefixDeclarations>...]]... [-b=<baseIri>] [-l=<limit>]
             [-E=<evaluatorMode>] [--spill-to-disk]
             [--in-process-db-memory=<inProcessDbMemory>]
-            [--reactive-spill-threshold=<reactiveSpillThreshold>] [--metrics
-            [=<metricsEndpoint>]] (-m=<mappingFiles> [-m=<mappingFiles>]...
+            [--reactive-spill-threshold=<reactiveSpillThreshold>]
+            [--dedup=<dedup>] [--metrics[=<metricsEndpoint>]]
+            (-m=<mappingFiles> [-m=<mappingFiles>]...
             [-f=<mappingFileRdfFormat>] [-r=<relativeSourceLocation>])
   -h, --help                 Show this help message and exit.
   -V, --version              Print version information and exit.
@@ -556,6 +603,28 @@ Usage:  map [-hVPvS] [-F=<outputRdfFormat>] [-o=<outputPath>]
                                with a spillable SQL hash join.
                              Default: 50000. Only effective with
                                --spill-to-disk.
+      --dedup=<dedup>        Output deduplication mode.
+                             auto: Annotation-driven (default). PrimaryKey /
+                               Unique+NotNull → no dedup;
+                               NotNull on all projected fields →
+                               simple-equality dedup; otherwise → exact dedup.
+                               Bare LogicalSource (no annotations) → no dedup.
+                             none: Never deduplicate. Produces duplicate
+                               triples when source rows repeat or
+                               when multiple TriplesMaps emit the same triple.
+                               Skips dedup overhead but every
+                               duplicate still flows through serialization —
+                               for duplicate-heavy mappings,
+                               view/full can be net faster because
+                               serialization is often the bottleneck.
+                             view: Force at least view-level dedup. PrimaryKey
+                               / Unique+NotNull keep the no-op,
+                               but unannotated views escalate from no-op to
+                               exact dedup.
+                             full: view-level dedup plus statement-level
+                               distinct on the assembled output.
+                               Catches cross-TriplesMap duplicate triples;
+                               memory grows with distinct output size.
       --metrics[=<metricsEndpoint>]
                              Push execution metrics to a Prometheus Pushgateway
                                after mapping completes.

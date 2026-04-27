@@ -13,6 +13,7 @@ import io.carml.engine.target.TargetRouter;
 import io.carml.engine.target.TargetWriter;
 import io.carml.engine.target.TargetWriterFactory;
 import io.carml.jar.runner.input.ModelLoader;
+import io.carml.jar.runner.option.DedupOption;
 import io.carml.jar.runner.option.EvaluatorMode;
 import io.carml.jar.runner.option.LoggingOptions;
 import io.carml.jar.runner.option.MappingFileOptions;
@@ -159,6 +160,23 @@ public class CarmlMapCommand implements Callable<Integer> {
   private int reactiveSpillThreshold = 50_000;
 
   @SuppressWarnings("unused")
+  @Option(names = {"--dedup"}, defaultValue = "auto", order = OptionOrder.DEDUP_ORDER,
+      converter = DedupOption.Converter.class,
+      description = {"Output deduplication mode.",
+          "auto: Annotation-driven (default). PrimaryKey / Unique+NotNull → no dedup;",
+          "  NotNull on all projected fields → simple-equality dedup; otherwise → exact dedup.",
+          "  Bare LogicalSource (no annotations) → no dedup.",
+          "none: Never deduplicate. Produces duplicate triples when source rows repeat or",
+          "  when multiple TriplesMaps emit the same triple. Skips dedup overhead but every",
+          "  duplicate still flows through serialization — for duplicate-heavy mappings,",
+          "  view/full can be net faster because serialization is often the bottleneck.",
+          "view: Force at least view-level dedup. PrimaryKey / Unique+NotNull keep the no-op,",
+          "  but unannotated views escalate from no-op to exact dedup.",
+          "full: view-level dedup plus statement-level distinct on the assembled output.",
+          "  Catches cross-TriplesMap duplicate triples; memory grows with distinct output size."})
+  private DedupOption dedup;
+
+  @SuppressWarnings("unused")
   @Option(names = {"--metrics"}, order = OptionOrder.METRICS_ORDER, arity = "0..1", fallbackValue = "localhost:9091",
       description = {"Push execution metrics to a Prometheus Pushgateway after mapping completes.",
           "Optionally specify host:port (default: localhost:9091).",
@@ -301,7 +319,8 @@ public class CarmlMapCommand implements Callable<Integer> {
 
     var mapperBuilder = RdfRmlMapper.builder()
         .triplesMaps(mapping)
-        .strictMode(strict);
+        .strictMode(strict)
+        .dedupMode(dedup.toDedupMode());
 
     var relativeSourceLocation = mappingFileOptions.getGroup()
         .getRelativeSourceLocation();
