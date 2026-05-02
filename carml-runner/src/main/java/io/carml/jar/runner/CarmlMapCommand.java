@@ -28,6 +28,7 @@ import io.carml.logicalview.duckdb.DuckDbLogicalViewEvaluatorFactory;
 import io.carml.logicalview.join.duckdb.DuckDbJoinExecutorFactory;
 import io.carml.model.FilePath;
 import io.carml.model.LogicalTarget;
+import io.carml.model.Mapping;
 import io.carml.model.Resource;
 import io.carml.model.Target;
 import io.carml.model.TriplesMap;
@@ -231,7 +232,7 @@ public class CarmlMapCommand implements Callable<Integer> {
 
     try (duckDbFactory) {
       var mapping = loadMapping();
-      var logicalTargets = collectLogicalTargets(mapping);
+      var logicalTargets = collectLogicalTargets(mapping.getTriplesMaps());
 
       if (logicalTargets.isEmpty()) {
         var rmlMapper = prepareMapper(mapping, duckDbFactory, metricsObserver, null);
@@ -300,11 +301,12 @@ public class CarmlMapCommand implements Callable<Integer> {
     return new DuckDbJoinExecutorFactory(reactiveSpillThreshold, true, spillDir);
   }
 
-  private RdfRmlMapper prepareMapper(Set<TriplesMap> mapping, DuckDbLogicalViewEvaluatorFactory duckDbFactory,
+  private RdfRmlMapper prepareMapper(Mapping mapping, DuckDbLogicalViewEvaluatorFactory duckDbFactory,
       MetricsObserver metricsObserver, TargetRouter targetRouter) {
 
     if (LOG.isDebugEnabled()) {
-      var mappingModel = mapping.stream()
+      var mappingModel = mapping.getTriplesMaps()
+          .stream()
           .map(Resource::asRdf)
           .flatMap(Model::stream)
           .collect(ModelCollector.toModel());
@@ -317,8 +319,13 @@ public class CarmlMapCommand implements Callable<Integer> {
           ModelSerializer.serializeAsRdf(mappingModel, RDFFormat.TURTLE, ModelSerializer.SIMPLE_WRITER_CONFIG, n -> n));
     }
 
+    // Pass the full Mapping (including mappingFilePaths) so that downstream resolvers — notably
+    // the file resolver wired by .mapping(...) below — can resolve sources declared with
+    // rml:RelativePathSource + rml:root rml:MappingDirectory. .triplesMaps(...) alone only sets
+    // the TriplesMap set and leaves the file resolver's mapping reference null, which NPEs on
+    // the first MAPPING_DIRECTORY-relative source lookup.
     var mapperBuilder = RdfRmlMapper.builder()
-        .triplesMaps(mapping)
+        .mapping(mapping)
         .strictMode(strict)
         .dedupMode(dedup.toDedupMode());
 
@@ -356,7 +363,7 @@ public class CarmlMapCommand implements Callable<Integer> {
     return mapperBuilder.build();
   }
 
-  private Set<TriplesMap> loadMapping() {
+  private Mapping loadMapping() {
     List<Path> paths = mappingFileOptions.getGroup()
         .getMappingFiles();
 
@@ -367,8 +374,16 @@ public class CarmlMapCommand implements Callable<Integer> {
 
     var mappingModel = modelLoader.loadModel(paths, mappingFormat);
 
-    return RmlMappingLoader.build()
+    var triplesMaps = RmlMappingLoader.build()
         .load(mappingModel);
+
+    // Build a Mapping with both the TriplesMap set and the source file paths so the engine's
+    // FileResolver can resolve mapping-directory-relative sources (rml:RelativePathSource
+    // with rml:root rml:MappingDirectory).
+    var mappingBuilder = Mapping.builder()
+        .triplesMaps(triplesMaps);
+    paths.forEach(mappingBuilder::mappingFilePath);
+    return mappingBuilder.build();
   }
 
   private boolean useBytesPipeline() {
@@ -503,7 +518,7 @@ public class CarmlMapCommand implements Callable<Integer> {
    * chain) and the <em>written</em> count reported by the router. The two differ whenever a mapping
    * produces mergeable statements — writer output is strictly a subset of the observed count.
    */
-  private void runRoutedMapping(Set<TriplesMap> mapping, Set<LogicalTarget> logicalTargets,
+  private void runRoutedMapping(Mapping mapping, Set<LogicalTarget> logicalTargets,
       DuckDbLogicalViewEvaluatorFactory duckDbFactory, MetricsObserver metricsObserver) {
 
     if (useBytesPipeline()) {
